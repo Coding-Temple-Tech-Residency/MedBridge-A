@@ -4,7 +4,6 @@ about: Define sprint work aligned to Agile/Scrum practices
 title: ''
 labels: ''
 assignees: ''
-
 ---
 
 ## User Story
