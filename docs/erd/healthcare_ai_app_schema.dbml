@@ -1,0 +1,117 @@
+// =====================================================
+// Patient-facing AI Health Records App — Schema (MVP)
+// Paste into dbdiagram.io (clear the editor first)
+// =====================================================
+
+// ---- Enums (constrained value sets) ----
+
+Enum user_role {
+  patient
+  admin
+}
+
+Enum document_type {
+  pdf
+  text
+}
+
+Enum document_status {
+  uploaded
+  processing
+  ready
+  failed
+}
+
+Enum message_role {
+  user
+  assistant
+}
+
+// ---- Auth ----
+
+Table users {
+  id int [pk, increment]
+  email varchar [unique, not null]
+  hashed_password varchar [not null]
+  role user_role [not null, default: 'patient']
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table sessions {
+  id int [pk, increment]
+  user_id int [not null]
+  refresh_token_hash varchar [not null, note: 'store a HASH of the refresh token, never the token itself']
+  ip_address varchar
+  user_agent varchar
+  expires_at timestamp [not null]
+  revoked_at timestamp [note: 'set to revoke a session before it expires']
+  created_at timestamp [not null, default: `now()`]
+}
+
+// ---- Health data ----
+
+Table documents {
+  id int [pk, increment]
+  user_id int [not null]
+  doc_type document_type [not null]
+  original_filename varchar
+  storage_path varchar [note: 'path/URL to the file in object storage — the bytes do NOT live in the DB']
+  raw_text text [note: 'extracted or pasted document text']
+  summary_text text [note: 'AI-generated plain-language summary']
+  summary_generated_at timestamp
+  status document_status [not null, default: 'uploaded']
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table lab_results {
+  id int [pk, increment]
+  user_id int [not null]
+  source_document_id int [note: 'nullable — labs may be extracted from a document or entered manually']
+  test_name varchar [not null]
+  value numeric [not null, note: 'numeric for charting; non-numeric results (e.g. positive/negative) would need a separate text column']
+  unit varchar
+  reference_range varchar
+  result_date date [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+// ---- AI Q&A ("Ask your records") ----
+
+Table conversations {
+  id int [pk, increment]
+  user_id int [not null]
+  title varchar [note: 'optional — can be auto-generated from the first message']
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table messages {
+  id int [pk, increment]
+  conversation_id int [not null]
+  role message_role [not null]
+  content text [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+// ---- Cross-cutting: HIPAA / AI accountability ----
+
+Table audit_log {
+  id int [pk, increment]
+  user_id int [note: 'nullable — some events are system-level or pre-auth']
+  action varchar [not null, note: "e.g. 'document.view', 'ai.summary', 'login'"]
+  resource_type varchar [note: "e.g. 'document', 'lab_result'"]
+  resource_id int
+  ip_address varchar
+  metadata jsonb [note: 'flexible extra context (what was sent to the AI, etc.)']
+  created_at timestamp [not null, default: `now()`]
+}
+
+// ---- Relationships ----
+
+Ref: sessions.user_id > users.id
+Ref: documents.user_id > users.id
+Ref: lab_results.user_id > users.id
+Ref: lab_results.source_document_id > documents.id
+Ref: conversations.user_id > users.id
+Ref: messages.conversation_id > conversations.id
+Ref: audit_log.user_id > users.id
