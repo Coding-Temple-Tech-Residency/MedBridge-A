@@ -1,72 +1,106 @@
-# TR Project Template
+# MedBridge-A — Frontend
+
+AI-Powered Patient Health Companion. This repository holds the **frontend** web
+app: patients upload or paste a medical document and receive a plain-language
+summary, a health dashboard, and actionable next steps.
+
+**Tech stack:** React 18 · TypeScript · Vite · Tailwind CSS · Recharts
+
+---
 
 ## Project Information
 
-Please complete the following before submitting your repository.
+- **Project Name:** MedBridge-A
+- **Team Name:** _(fill in)_
+- **Cohort / Sprint:** Sprint 1 — Foundation & Infrastructure
+- **Team Members:** _(fill in)_
 
-**Project Name:**  
-**Team Name:**  
-**Cohort / Sprint:**  
-**Team Members:**  
-**Tech Stack:** 
+---
 
-## Project Overview
+## Frontend Setup
 
+### Prerequisites
 
+- **Node.js 18+** and npm (check with `node -v`)
 
-Patients consistently struggle to understand their medical records, lab results, and physician notes. This gap in health literacy leads to poor medication adherence, missed follow-ups, and preventable ER visits.
+### Getting started
 
-MedBridge is a web application that lets patients upload or paste their medical documents and receive plain-language explanations, personalized health summaries, and actionable next steps, all powered by AI.
+```bash
+# 1. Clone and enter the repo
+git clone https://github.com/Coding-Temple-Tech-Residency/MedBridge-A.git
+cd MedBridge-A
 
-## Setup & Documentation
+# 2. Install dependencies
+npm install
 
+# 3. Set up environment variables
+cp .env.example .env        # then open .env and adjust values if needed
 
+# 4. Start the dev server
+npm run dev                 # serves at http://localhost:5173
+```
 
-## Getting started
+The app boots at the URL Vite prints (default `http://localhost:5173`).
 
-# 1. Clone the repo and enter the backend
-git clone <repo-url>
-cd healthcare-app/backend
+### Environment variables
 
-# 2. Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
+All client-side env vars must be prefixed with `VITE_` (Vite only exposes those).
+They are validated at startup by `src/env.ts` — a missing or malformed value
+throws a clear error immediately instead of failing silently later.
 
-# 3. Install dependencies
-pip install -r requirements.txt
+| Variable            | Required | Description                          | Example                 |
+| ------------------- | -------- | ------------------------------------ | ----------------------- |
+| `VITE_API_BASE_URL` | Yes      | Base URL of the MedBridge backend.   | `http://localhost:8000` |
 
-# 4. Set up environment variables
-cp .env.example .env              # then open .env and fill in real values
+### Available scripts
 
-# 5. Create the database (one time)
-createdb healthcare               # or: psql -c "CREATE DATABASE healthcare;"
+| Script              | What it does                                      |
+| ------------------- | ------------------------------------------------- |
+| `npm run dev`       | Start the Vite dev server with hot reload.        |
+| `npm run build`     | Type-check and produce a production build.        |
+| `npm run preview`   | Serve the production build locally.               |
+| `npm run lint`      | Run ESLint over the codebase (zero warnings = OK).|
+| `npm run format`    | Format all files with Prettier.                   |
+| `npm run format:check` | Check formatting without writing changes.      |
 
-# 6. Run migrations (once Alembic is set up)
-# alembic upgrade head
+---
 
-# 7. Start the dev server
-fastapi dev app/main.py
+## Project structure
 
+```
+src/
+  components/    Page + UI components (Login, Landing, Upload, Results, Header, Logo)
+  env.ts         Validated environment-variable access
+  mockData.ts    Sample report + mock analysis result (placeholder until API is wired)
+  types.ts       Shared TypeScript types
+  App.tsx        Top-level view switching
+  main.tsx       React entry point
+```
 
+---
 
-## Notes
+## Notes / known limitations
 
-List any known limitations, incomplete features, or important technical considerations.
+- The analysis flow currently runs on **mock data** (`src/mockData.ts`); the
+  backend API is not yet wired in. Login and document analysis are simulated.
+- Auth is **UI-only** at this stage — real `POST /api/auth/*` calls, JWT storage,
+  and protected routing are tracked in later Sprint 1 issues (FE-05, FE-06, FE-07)
+  and depend on the API-contract sync (FE-08).
 
-## Development Standards Reminder
+---
 
-All submissions should reflect professional engineering standards:
+## Development standards
 
-- Write clean, readable, and modular code  
-- Use clear naming conventions  
-- Remove unused files, variables, and console logs  
-- Follow consistent formatting and linting practices  
-- Write meaningful commit messages  
-- Keep branches organized and avoid pushing broken code to main  
-- Review teammate pull requests respectfully and constructively  
+- Clean, modular, well-named code; no stray `console.log`s or unused files.
+- `npm run lint` and `npm run format:check` pass before opening a PR.
+- Meaningful commit messages; keep `main` green — no broken pushes.
+- Review teammates' PRs respectfully and constructively.
 
-Your repository should be organized, understandable, and demo-ready.
+---
 
 ## Intellectual Property Notice
 
-This project was created as part of a Coding Temple Tech Residency. All work produced during the residency is considered the intellectual property of Coding Temple or the sponsoring employer, unless otherwise stated in a signed agreement. By contributing to this project, you acknowledge and agree to these terms.
+This project was created as part of a Coding Temple Tech Residency. All work
+produced during the residency is considered the intellectual property of Coding
+Temple or the sponsoring employer, unless otherwise stated in a signed agreement.
+By contributing, you acknowledge and agree to these terms.
