@@ -26,9 +26,7 @@ function validUrl(name: string, value: string): string {
     new URL(value);
     return value;
   } catch {
-    throw new Error(
-      `Environment variable ${name} is not a valid URL: "${value}".`,
-    );
+    throw new Error(`Environment variable ${name} is not a valid URL: "${value}".`);
   }
 }
 

@@ -35,9 +35,7 @@ const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
       <div className="max-w-2xl mx-auto">
         {/* Page header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#1E3A2F] mb-2">
-            Analyse Your Medical Document
-          </h1>
+          <h1 className="text-3xl font-bold text-[#1E3A2F] mb-2">Analyse Your Medical Document</h1>
           <p className="text-gray-500">
             Upload a file or paste the text from your lab results, report, or prescription.
           </p>
@@ -80,8 +78,8 @@ const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
               isDragging
                 ? 'border-[#2E7D55] bg-green-50 scale-[1.01]'
                 : fileName
-                ? 'border-[#8FD4A8] bg-green-50'
-                : 'border-gray-200 bg-white hover:border-[#8FD4A8] hover:bg-[#F2F7F4]'
+                  ? 'border-[#8FD4A8] bg-green-50'
+                  : 'border-gray-200 bg-white hover:border-[#8FD4A8] hover:bg-[#F2F7F4]'
             }`}
           >
             <input

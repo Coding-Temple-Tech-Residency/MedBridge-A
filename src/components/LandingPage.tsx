@@ -34,13 +34,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-extrabold leading-tight mb-6 text-white">
-            Your Health Records,{' '}
-            <span className="text-[#D4A843]">Finally Explained</span>
+            Your Health Records, <span className="text-[#D4A843]">Finally Explained</span>
           </h1>
 
           <p className="text-xl text-white/75 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Upload any medical document and receive clear plain-language explanations,
-            personalised health summaries, and actionable next steps — all powered by AI.
+            Upload any medical document and receive clear plain-language explanations, personalised
+            health summaries, and actionable next steps — all powered by AI.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -69,7 +68,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             { icon: '⚡', label: 'Results in Seconds' },
             { icon: '🆓', label: 'Free to Try' },
           ].map((item) => (
-            <div key={item.label} className="flex items-center gap-2 text-sm font-medium text-gray-600">
+            <div
+              key={item.label}
+              className="flex items-center gap-2 text-sm font-medium text-gray-600"
+            >
               <span className="text-base">{item.icon}</span>
               {item.label}
             </div>
@@ -83,7 +85,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <h2 className="text-2xl font-bold text-[#1E3A2F] mb-2">
             Works With Any Medical Document
           </h2>
-          <p className="text-gray-500 mb-8">Paste the text or upload a file — we handle the rest.</p>
+          <p className="text-gray-500 mb-8">
+            Paste the text or upload a file — we handle the rest.
+          </p>
           <div className="flex flex-wrap justify-center gap-3">
             {docTypes.map((type) => (
               <span

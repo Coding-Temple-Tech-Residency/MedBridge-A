@@ -60,9 +60,7 @@ const AnalysingScreen: React.FC = () => {
                 <span className="w-5 h-5 rounded-full border-2 border-gray-200 flex-shrink-0" />
               )}
               <span
-                className={`text-sm ${
-                  i === step ? 'text-[#1E3A2F] font-medium' : 'text-gray-400'
-                }`}
+                className={`text-sm ${i === step ? 'text-[#1E3A2F] font-medium' : 'text-gray-400'}`}
               >
                 {s}
               </span>

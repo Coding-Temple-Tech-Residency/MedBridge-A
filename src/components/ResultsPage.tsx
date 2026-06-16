@@ -29,8 +29,8 @@ const MetricRangeBar: React.FC<{ metric: HealthMetric }> = ({ metric }) => {
     metric.status === 'elevated'
       ? 'bg-[#D4A843]'
       : metric.status === 'low'
-      ? 'bg-blue-400'
-      : 'bg-[#2E7D55]';
+        ? 'bg-blue-400'
+        : 'bg-[#2E7D55]';
 
   return (
     <div className="relative h-2.5 bg-gray-100 rounded-full mt-2.5 mb-1">
@@ -144,7 +144,9 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ onNewDocument }) => {
         {/* ── Section 1: Plain language explanation ── */}
         <section id="explanation" className="scroll-mt-28">
           <h2 className="text-2xl font-bold text-[#1E3A2F] mb-1">Plain Language Explanation</h2>
-          <p className="text-gray-400 text-sm mb-6">What your results actually mean — in plain English.</p>
+          <p className="text-gray-400 text-sm mb-6">
+            What your results actually mean — in plain English.
+          </p>
 
           {/* Summary */}
           <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-5">
@@ -160,8 +162,8 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ onNewDocument }) => {
                   section.status === 'elevated'
                     ? 'border-amber-200'
                     : section.status === 'low'
-                    ? 'border-blue-200'
-                    : 'border-gray-100'
+                      ? 'border-blue-200'
+                      : 'border-gray-100'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -210,7 +212,10 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ onNewDocument }) => {
               AI-estimated scores (0–100) based on how your values compare to reference ranges.
             </p>
             <ResponsiveContainer width="100%" height={310}>
-              <RadarChart data={result.healthCategories} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+              <RadarChart
+                data={result.healthCategories}
+                margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
+              >
                 <PolarGrid stroke="#8FD4A8" strokeOpacity={0.4} />
                 <PolarAngleAxis
                   dataKey="category"
@@ -251,8 +256,8 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ onNewDocument }) => {
                   metric.status === 'elevated'
                     ? 'border-amber-200'
                     : metric.status === 'low'
-                    ? 'border-blue-200'
-                    : 'border-gray-100'
+                      ? 'border-blue-200'
+                      : 'border-gray-100'
                 }`}
               >
                 <div className="flex justify-between items-start">
@@ -266,8 +271,8 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ onNewDocument }) => {
                         metric.status === 'elevated'
                           ? 'text-[#D4A843]'
                           : metric.status === 'low'
-                          ? 'text-blue-500'
-                          : 'text-[#2E7D55]'
+                            ? 'text-blue-500'
+                            : 'text-[#2E7D55]'
                       }`}
                     >
                       {metric.value}
@@ -317,8 +322,8 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ onNewDocument }) => {
                   step.priority === 'high'
                     ? 'border-amber-200'
                     : step.priority === 'medium'
-                    ? 'border-[#8FD4A8]'
-                    : 'border-gray-100'
+                      ? 'border-[#8FD4A8]'
+                      : 'border-gray-100'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -328,9 +333,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ onNewDocument }) => {
                       <h3 className="font-semibold text-[#1E3A2F]">{step.title}</h3>
                       <PriorityBadge priority={step.priority} />
                     </div>
-                    <p className="text-gray-500 text-sm leading-relaxed mb-2">
-                      {step.description}
-                    </p>
+                    <p className="text-gray-500 text-sm leading-relaxed mb-2">{step.description}</p>
                     <div className="flex items-center gap-1.5 text-xs text-gray-400">
                       <span>⏱</span>
                       <span>{step.timeframe}</span>

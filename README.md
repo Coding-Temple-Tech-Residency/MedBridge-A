@@ -48,20 +48,20 @@ All client-side env vars must be prefixed with `VITE_` (Vite only exposes those)
 They are validated at startup by `src/env.ts` — a missing or malformed value
 throws a clear error immediately instead of failing silently later.
 
-| Variable            | Required | Description                          | Example                 |
-| ------------------- | -------- | ------------------------------------ | ----------------------- |
-| `VITE_API_BASE_URL` | Yes      | Base URL of the MedBridge backend.   | `http://localhost:8000` |
+| Variable            | Required | Description                        | Example                 |
+| ------------------- | -------- | ---------------------------------- | ----------------------- |
+| `VITE_API_BASE_URL` | Yes      | Base URL of the MedBridge backend. | `http://localhost:8000` |
 
 ### Available scripts
 
-| Script              | What it does                                      |
-| ------------------- | ------------------------------------------------- |
-| `npm run dev`       | Start the Vite dev server with hot reload.        |
-| `npm run build`     | Type-check and produce a production build.        |
-| `npm run preview`   | Serve the production build locally.               |
-| `npm run lint`      | Run ESLint over the codebase (zero warnings = OK).|
-| `npm run format`    | Format all files with Prettier.                   |
-| `npm run format:check` | Check formatting without writing changes.      |
+| Script                 | What it does                                       |
+| ---------------------- | -------------------------------------------------- |
+| `npm run dev`          | Start the Vite dev server with hot reload.         |
+| `npm run build`        | Type-check and produce a production build.         |
+| `npm run preview`      | Serve the production build locally.                |
+| `npm run lint`         | Run ESLint over the codebase (zero warnings = OK). |
+| `npm run format`       | Format all files with Prettier.                    |
+| `npm run format:check` | Check formatting without writing changes.          |
 
 ---
 

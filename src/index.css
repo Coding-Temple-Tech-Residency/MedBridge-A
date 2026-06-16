@@ -5,10 +5,17 @@
 @layer base {
   body {
     @apply bg-brand-bg text-gray-800 antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     @apply text-brand-dark;
   }
 }

@@ -81,7 +81,7 @@ export const mockAnalysisResult: AnalysisResult = {
         icon: '⚡',
         finding: 'Your electrolyte balance is excellent.',
         detail:
-          'Sodium, potassium, and other key electrolytes are all within normal ranges. Electrolytes regulate everything from your heartbeat to muscle contractions to fluid balance — having them in the right range means your body\'s electrical system is running smoothly.',
+          "Sodium, potassium, and other key electrolytes are all within normal ranges. Electrolytes regulate everything from your heartbeat to muscle contractions to fluid balance — having them in the right range means your body's electrical system is running smoothly.",
         status: 'normal',
       },
       {

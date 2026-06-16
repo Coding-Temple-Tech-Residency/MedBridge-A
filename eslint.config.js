@@ -20,10 +20,7 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       // Allow unused args prefixed with _ so onLogout?: () => void etc. stay clean
       '@typescript-eslint/no-unused-vars': [
         'error',
