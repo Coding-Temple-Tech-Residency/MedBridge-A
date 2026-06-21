@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
+import Button from './UI/Button';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ const Header: React.FC = () => {
 
   return (
     <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-20">
-      <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-between">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
         {/* Logo + wordmark */}
         <button
           onClick={() => navigate('/dashboard')}
@@ -27,7 +28,7 @@ const Header: React.FC = () => {
         </button>
 
         {/* Right-side nav */}
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-2 sm:gap-4">
           {pathname !== '/dashboard' && (
             <button
               onClick={() => navigate('/dashboard')}
@@ -37,12 +38,9 @@ const Header: React.FC = () => {
             </button>
           )}
           {pathname === '/dashboard' && (
-            <button
-              onClick={() => navigate('/upload')}
-              className="bg-[#1E3A2F] hover:bg-[#2E7D55] text-white text-sm font-semibold px-5 py-2 rounded-xl transition-all duration-200"
-            >
+            <Button onClick={() => navigate('/upload')}>
               Try It Free
-            </button>
+            </Button>
           )}
           <button
             onClick={handleLogout}

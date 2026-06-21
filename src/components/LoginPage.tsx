@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import Button from './UI/Button';
+import Input from './UI/Input';
+import Card from './UI/Card';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,40 +53,31 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <Card className="p-8 shadow-2xl">
           <h2 className="text-2xl font-bold text-[#1E3A2F] mb-1">Welcome back</h2>
           <p className="text-gray-500 text-sm mb-7">Sign in to access your health companion</p>
+          <form onSubmit={handleSubmit} noValidate> 
+            <Input
+              id="email"
+              label="Email address"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="mb-5"
+            />
 
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="mb-5">
-              <label htmlFor="email" className="block text-sm font-medium text-[#1E3A2F] mb-1.5">
-                Email address
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2E7D55] focus:border-transparent transition"
-              />
-            </div>
-
-            <div className="mb-6">
-              <label htmlFor="password" className="block text-sm font-medium text-[#1E3A2F] mb-1.5">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2E7D55] focus:border-transparent transition"
-              />
-            </div>
+            <Input
+              id="password"
+              label="Password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="mb-6"
+            />
 
             {error && (
               <div className="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
@@ -91,13 +85,13 @@ const LoginPage: React.FC = () => {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#1E3A2F] hover:bg-[#2E7D55] disabled:opacity-60 text-white font-bold py-3.5 rounded-xl text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full py-3.5 shadow-md hover:shadow-lg"
             >
               {loading ? 'Signing in…' : 'Sign In'}
-            </button>
+            </Button>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">
@@ -110,7 +104,7 @@ const LoginPage: React.FC = () => {
           <p className="text-center text-xs text-gray-400 mt-4">
             For informational purposes only. Always consult a qualified healthcare provider.
           </p>
-        </div>
+        </Card>
       </div>
     </div>
   );
