@@ -1,15 +1,15 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth.security import (
+from app.security import (
     hash_password,
     verify_password,
     create_access_token,
     create_refresh_token,
     decode_token,
 )
-from app.auth.repository.user_repo import UserRepository
-from app.auth.repository.auth_repo import AuthRepository
+from app.auth.users_repo import UserRepository
+from app.auth.auth_repo import AuthRepository
 
 # Optional: enable audit logging
 # from app.audit.services import AuditService

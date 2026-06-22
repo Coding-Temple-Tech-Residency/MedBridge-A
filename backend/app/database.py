@@ -1,14 +1,19 @@
+# backend/app/database.py
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from app.config import settings
-
-engine = create_engine(settings.database_url, echo=True)
-SessionLocal = sessionmaker(bind=engine, autoflush=False)
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 
+SQLALCHEMY_DATABASE_URL = "sqlite:///./medbridge.db"
 
-class Base(DeclarativeBase):
-    pass
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()
+
 
 def get_db():
     db = SessionLocal()

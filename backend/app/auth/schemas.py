@@ -1,15 +1,21 @@
+# backend/app/auth/schemas.py
 from pydantic import BaseModel, EmailStr
 
 
-class RegisterRequest(BaseModel):
+class UserBase(BaseModel):
     email: EmailStr
+
+
+class UserCreate(UserBase):
     password: str
 
 
-class RegisterResponse(BaseModel):
-    message: str
-    email: str
-    id: str
+class UserRead(UserBase):
+    id: int
+    is_active: bool
+
+    class Config:
+        from_attributes = True
 
 
 class LoginRequest(BaseModel):
@@ -17,11 +23,14 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class TokenResponse(BaseModel):
+class Token(BaseModel):
     access_token: str
-    refresh_token: str
     token_type: str = "bearer"
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str
+    refresh_token: str | None = None  # optional if using cookie only
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str | None = None  # optional; cookie is primary

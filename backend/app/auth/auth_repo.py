@@ -1,45 +1,74 @@
+# backend/app/auth/auth_repo.py
+from datetime import datetime, timedelta
+from uuid import uuid4
 from sqlalchemy.orm import Session
+from .. import models
 
-from app.auth.models import RefreshToken
+
 
 
 class AuthRepository:
 
     @staticmethod
-    def get_refresh_token(db: Session, token: str):
-        return db.query(RefreshToken).filter(RefreshToken.token == token).first()
-
-    @staticmethod
     def create_refresh_token(
         db: Session,
-        user_id: str,
-        token: str,
-        user_agent: str | None,
-    ):
-        record = RefreshToken(
+        user_id: int,
+        user_agent: str | None = None,
+        days_valid: int = 30,
+    ) -> models.RefreshToken:
+        token_str = str(uuid4())
+        refresh = models.RefreshToken(
             user_id=user_id,
-            token=token,
+            token=token_str,
             user_agent=user_agent,
             revoked=False,
+            expires_at=datetime.utcnow() + timedelta(days=days_valid),
         )
-        db.add(record)
+        db.add(refresh)
         db.commit()
-        db.refresh(record)
-        return record
+        db.refresh(refresh)
+        return refresh
 
     @staticmethod
-    def revoke_refresh_token(db: Session, token: str):
-        record = AuthRepository.get_refresh_token(db, token)
-        if record and not record.revoked:
-            record.revoked = True
-            db.commit()
-            db.refresh(record)
-        return record
+    def get_refresh_token(db: Session, token: str) -> models.RefreshToken | None:
+        return (
+            db.query(models.RefreshToken)
+            .filter(models.RefreshToken.token == token)
+            .first()
+        )
 
     @staticmethod
-    def revoke_all_user_tokens(db: Session, user_id: str):
-        db.query(RefreshToken).filter(
-            RefreshToken.user_id == user_id,
-            RefreshToken.revoked == False
+    def rotate_refresh_token(
+        db: Session,
+        old_token: models.RefreshToken,
+        user_agent: str | None = None,
+        days_valid: int = 30,
+    ) -> models.RefreshToken:
+        old_token.revoked = True
+        db.add(old_token)
+
+        new_token = models.RefreshToken(
+            user_id=old_token.user_id,
+            token=str(uuid4()),
+            user_agent=user_agent,
+            revoked=False,
+            expires_at=datetime.utcnow() + timedelta(days=days_valid),
+        )
+        db.add(new_token)
+        db.commit()
+        db.refresh(new_token)
+        return new_token
+
+    @staticmethod
+    def revoke_token(db: Session, token: models.RefreshToken) -> None:
+        token.revoked = True
+        db.add(token)
+        db.commit()
+
+    @staticmethod
+    def revoke_all_for_user(db: Session, user_id: int) -> None:
+        db.query(models.RefreshToken).filter(
+            models.RefreshToken.user_id == user_id,
+            models.RefreshToken.revoked == False,  # noqa: E712
         ).update({"revoked": True})
         db.commit()

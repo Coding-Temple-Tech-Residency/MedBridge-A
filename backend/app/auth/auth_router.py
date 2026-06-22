@@ -1,73 +1,102 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, status
+from fastapi import APIRouter, Depends, Header, Request, Response, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.auth.schemas import RegisterRequest, LoginRequest, TokenResponse, RefreshRequest, RegisterResponse
-from app.auth.services import AuthService
-from app.auth.security import create_access_token, jwt, SECRET_KEY, ALGORITHM
-from app.auth.models import User
+from ..database import get_db
+from ..dependencies import get_current_user
+from .. import models
+from .schemas import (
+    UserCreate,
+    UserRead,
+    LoginRequest,
+    Token,
+    RefreshRequest,
+    LogoutRequest,
+)
+from .services import AuthService
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+COOKIE_NAME = "refresh_token"
+COOKIE_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+COOKIE_SECURE = False  # local dev; set True in production
+COOKIE_HTTPONLY = True
+COOKIE_SAMESITE = "lax"  # use "none" in production with HTTPS
 
 
-
-
-
-
-@router.post("/register", response_model=RegisterResponse, status_code=201)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == payload.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    user = AuthService.register(db, payload.email, payload.password)
-
-    return RegisterResponse(
-        message="User registered successfully",
-        email=user.email,
-        id=str(user.id)
+def set_refresh_cookie(response: Response, token: str):
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=token,
+        httponly=COOKIE_HTTPONLY,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        max_age=COOKIE_MAX_AGE,
+        path="/auth/refresh",
     )
 
 
-
-
-@router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    access, refresh = AuthService.login(
-        db,
-        payload.email,
-        payload.password,
-        request.headers.get("user-agent")
-    )
-
-    return TokenResponse(
-        access_token=access,
-        refresh_token=refresh,
-        token_type="bearer"
+def clear_refresh_cookie(response: Response):
+    response.delete_cookie(
+        key=COOKIE_NAME,
+        path="/auth/refresh",
     )
 
 
-@router.post("/refresh")
-def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
-    access = AuthService.refresh(db, payload.refresh_token)
+@router.post("/register", response_model=UserRead)
+def register(user_in: UserCreate, db: Session = Depends(get_db)):
+    user = AuthService.register(db, user_in)
+    return user
+
+
+@router.post("/login", response_model=Token)
+def login(
+    login_in: LoginRequest,response: Response,
+    db: Session = Depends(get_db),
+    user_agent: str | None = Header(default=None, alias="User-Agent"),
+    ):
+    access, refresh = AuthService.login(db, login_in, user_agent)
+    set_refresh_cookie(response, refresh)
+    return {"access_token": access, "token_type": "bearer"}
+
+
+@router.post("/refresh", response_model=Token)
+def refresh(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    user_agent: str | None = Header(default=None, alias="User-Agent"),
+    body: RefreshRequest | None = None,
+):
+    cookie_token = request.cookies.get(COOKIE_NAME)
+    body_token = body.refresh_token if body else None
+
+    refresh_token = body_token or cookie_token
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+
+    access, new_refresh = AuthService.refresh(db, refresh_token, user_agent)
+    set_refresh_cookie(response, new_refresh)
     return {"access_token": access, "token_type": "bearer"}
 
 
 @router.post("/logout")
-def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
-    AuthService.logout(db, payload.refresh_token)
-    return {"message": "Logged out"}
+def logout(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    body: LogoutRequest | None = None,
+):
+    cookie_token = request.cookies.get(COOKIE_NAME)
+    body_token = body.refresh_token if body else None
+    refresh_token = body_token or cookie_token
+
+    AuthService.logout(db, current_user, refresh_token)
+    clear_refresh_cookie(response)
+    return {"detail": "Logged out"}
 
 
-@router.get("/me")
-def me(token: str, db: Session = Depends(get_db)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-    except:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"id": str(user.id), "email": user.email}
+@router.get("/me", response_model=UserRead)
+def me(current_user: models.User = Depends(get_current_user)):
+    return current_user
