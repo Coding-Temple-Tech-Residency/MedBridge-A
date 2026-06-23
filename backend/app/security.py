@@ -1,14 +1,13 @@
-# backend/app/security.py
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
+from app.config import settings
 
-# REAL values — not string placeholders
-SECRET_KEY = "super-secret-key-change-this"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 15  # must be an int
+SECRET_KEY = settings.jwt_secret_key
+ALGORITHM = settings.jwt_algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

@@ -1,19 +1,13 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
-from pathlib import Path
-import 
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    database_url: str = os.getenv("DATABASE_URL")
-    jwt_secret_key: str = os.getenv('jwt_secret_key')
-    jwt_algorithm: str = os.getenv('jwt_algorithm') 
-    access_token_expire_minutes: int = 15
+    database_url: str
+    jwt_secret_key: str
+    jwt_algorithm: str
+    access_token_expire_minutes: int
 
-    model_config = SettingsConfigDict(
-        env_file=str(Path(__file__).parent.parent.parent / ".env"),
-        extra="ignore"
-    )
-
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
 settings = Settings()
-
