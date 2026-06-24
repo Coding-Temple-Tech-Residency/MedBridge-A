@@ -1,11 +1,30 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy import text
-from sqlalchemy.orm import Session
-from app.database import get_db
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Healthcare API")
+from .database import Base, engine
+from .auth.auth_router import router as auth_router
 
-@app.get("/health")
-def health(db: Session = Depends(get_db)):
-    db.execute(text("SELECT 1"))
-    return {"status": "ok", "db": "connected"}
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="MedBridge Auth")
+
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router)
+
+
+@app.get("/")
+def root():
+    return {"message": "OK"}
