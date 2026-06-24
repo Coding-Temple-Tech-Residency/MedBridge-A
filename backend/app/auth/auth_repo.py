@@ -1,14 +1,10 @@
-
 from datetime import datetime, timedelta
 from uuid import uuid4
 from sqlalchemy.orm import Session
 from .. import models
 
 
-
-
 class AuthRepository:
-
     @staticmethod
     def create_refresh_token(
         db: Session,
@@ -16,6 +12,8 @@ class AuthRepository:
         user_agent: str | None = None,
         days_valid: int = 30,
     ) -> models.RefreshToken:
+        """Generates a new opaque refresh token, stores it, and returns the row.
+        The token string lives on the returned object as `.token`."""
         token_str = str(uuid4())
         refresh = models.RefreshToken(
             user_id=user_id,
@@ -44,9 +42,9 @@ class AuthRepository:
         user_agent: str | None = None,
         days_valid: int = 30,
     ) -> models.RefreshToken:
+        """Revokes the old token and issues a fresh one for the same user."""
         old_token.revoked = True
         db.add(old_token)
-
         new_token = models.RefreshToken(
             user_id=old_token.user_id,
             token=str(uuid4()),
