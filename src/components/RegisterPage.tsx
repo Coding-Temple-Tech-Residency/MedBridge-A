@@ -86,15 +86,16 @@ const RegisterPage: React.FC = () => {
     // after the backend authentication endpoint is implemented.
 
     setTimeout(() => {
-      setLoading(false);
 
       if (email.toLowerCase() === 'taken@example.com') {
         setEmailError(REGISTER_ERRORS.duplicateEmail);
+        setLoading(false);
         return;
       }
 
       if (email.toLowerCase() === 'server@example.com') {
         setError(REGISTER_ERRORS.serverError);
+        setLoading(false);
         return;
       }
 
