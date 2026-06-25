@@ -4,6 +4,20 @@ import Button from './UI/Button';
 import Input from './UI/Input';
 import Card from './UI/Card';
 
+const REGISTER_ERRORS = {
+  nameRequired: 'Full name is required.',
+  emailRequired: 'Email is required.',
+  emailInvalid: 'Please enter a valid email address.',
+  passwordRequired: 'Password is required.',
+  passwordTooShort: 'Password must be at least 8 characters.',
+  confirmRequired: 'Please confirm your password.',
+  passwordMismatch: 'Passwords do not match.',
+  duplicateEmail: 'An account with this email already exists.',
+  serverError: 'Something went wrong. Please try again.',
+};
+
+const REGISTER_SUCCESS = 'Account created successfully! Redirecting to sign in...';
+
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [name, setName] = useState('');
@@ -11,39 +25,84 @@ const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [nameError, setNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmError, setConfirmError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+    setNameError('');
+    setEmailError('');
+    setPasswordError('');
+    setConfirmError('');
 
-    if (!name.trim() || !email.trim() || !password.trim() || !confirm.trim()) {
-      setError('Please fill in all fields.');
-      return;
+    let hasErrors = false;
+
+    if (!name.trim()) {
+      setNameError(REGISTER_ERRORS.nameRequired);
+      hasErrors = true;
     }
+
+    if (!email.trim()) {
+      setEmailError(REGISTER_ERRORS.emailRequired);
+      hasErrors = true;
+    }
+
+    if (!password.trim()) {
+      setPasswordError(REGISTER_ERRORS.passwordRequired);
+      hasErrors = true;
+    }
+
+    if (!confirm.trim()) {
+      setConfirmError(REGISTER_ERRORS.confirmRequired);
+      hasErrors = true;
+    }
+
+    if (hasErrors) return;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address.');
+      setEmailError(REGISTER_ERRORS.emailInvalid);
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setPasswordError(REGISTER_ERRORS.passwordTooShort);
       return;
     }
 
     if (password !== confirm) {
-      setError('Passwords do not match.');
+      setConfirmError(REGISTER_ERRORS.passwordMismatch);
       return;
     }
 
     setLoading(true);
-    // Simulate registration delay
+    // TODO: Replace mock registration with POST /api/auth/register
+    // after the backend authentication endpoint is implemented.
+
     setTimeout(() => {
       setLoading(false);
-      localStorage.setItem('auth_token', 'mock-token');
-      navigate('/dashboard');
+
+      if (email.toLowerCase() === 'taken@example.com') {
+        setEmailError(REGISTER_ERRORS.duplicateEmail);
+        return;
+      }
+
+      if (email.toLowerCase() === 'server@example.com') {
+        setError(REGISTER_ERRORS.serverError);
+        return;
+      }
+
+      setSuccess(REGISTER_SUCCESS);
+
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
     }, 800);
   };
 
@@ -76,8 +135,12 @@ const RegisterPage: React.FC = () => {
               type="text"
               autoComplete="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setNameError('');
+              }}
               placeholder="Jane Smith"
+              error={nameError}
               className="mb-5"
             />
 
@@ -87,8 +150,12 @@ const RegisterPage: React.FC = () => {
               type="email"
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError('');
+              }}
               placeholder="you@example.com"
+              error={emailError}
               className="mb-5"
             />
 
@@ -98,8 +165,12 @@ const RegisterPage: React.FC = () => {
               type="password"
               autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordError('');
+              }}
               placeholder="At least 8 characters"
+              error={passwordError}
               className="mb-5"
             />
             <Input
@@ -108,10 +179,20 @@ const RegisterPage: React.FC = () => {
               type="password"
               autoComplete="new-password"
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              onChange={(e) => {
+                setConfirm(e.target.value);
+                setConfirmError('');
+              }}
               placeholder="••••••••"
+              error={confirmError}
               className="mb-6"
             />
+
+            {success && (
+              <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {success}
+              </div>
+            )}
 
             {error && (
               <div className="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
