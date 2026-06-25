@@ -6,8 +6,9 @@ from app.security import (
     verify_password,
     create_access_token,
 )
-from app.auth.users_repo import UserRepository
+from app.auth.users_repo import UsersRepository
 from app.auth.auth_repo import AuthRepository
+from app.auth.schemas import UserCreate
 
 # Optional: enable audit logging
 # from app.audit.services import AuditService
@@ -19,16 +20,16 @@ class AuthService:
     # REGISTER
     # ==========================
     @staticmethod
-    def register(db: Session, email: str, password: str):
-        existing = UserRepository.get_by_email(db, email)
+    def register(db: Session, user_in: UserCreate):
+        existing = UsersRepository.get_by_email(db, user_in.email)
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered",
-            )
 
-        hashed = hash_password(password)
-        user = UserRepository.create(db, email, hashed)
+           )
+        user = UsersRepository.create(db, user_in)
+
 
         # AuditService.log_event(db, "REGISTER_SUCCESS", user_id=str(user.id))
 
@@ -38,11 +39,11 @@ class AuthService:
     # LOGIN
     # ==========================
     @staticmethod
-    def login(db: Session, email: str, password: str, user_agent: str | None):
-        user = UserRepository.get_by_email(db, email)
+    def login(db: Session, login_in, user_agent: str | None = None):
+        user = UsersRepository.get_by_email(db, login_in.email)
         # NOTE: model field is `hashed_password`, not `password`
-        if not user or not verify_password(password, user.hashed_password):
-            # AuditService.log_event(db, "LOGIN_FAILED", metadata={"email": email})
+        if not user or not verify_password(login_in.password, user.hashed_password):
+        # AuditService.log_event(db, "LOGIN_FAILED", metadata={"email": email})
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
@@ -100,7 +101,7 @@ class AuthService:
     # LOGOUT (ONE SESSION)
     # ==========================
     @staticmethod
-    def logout(db: Session, refresh_token: str):
+    def logout(db: Session, current_user, refresh_token: str):
         record = AuthRepository.get_refresh_token(db, refresh_token)
         if not record:
             raise HTTPException(
