@@ -13,7 +13,7 @@ const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   return (
-    <div className="w-full">
+    <div className={`w-full ${className}`}>
       {label && (
         <label
           htmlFor={id}
@@ -25,7 +25,11 @@ const Input: React.FC<InputProps> = ({
 
       <input
         id={id}
-        className={`w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-primary transition ${className}`}
+        className={`w-full rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:border-transparent ${
+          error
+            ? 'border border-red-500 focus:ring-red-500'
+            : 'border border-gray-200 focus:ring-brand-primary'
+        }`}
         {...props}
       />
 
