@@ -1,13 +1,18 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import Button from './UI/Button';
+import { setAccessToken } from '@/features/auth/authToken';
+import { apiClient } from '@/api/client';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
+    setAccessToken(null);
+    // Fire-and-forget: revokes the refresh cookie on the server.
+    // Navigation proceeds immediately so the user is never blocked.
+    apiClient.post('/api/auth/logout').catch(() => undefined);
     navigate('/login');
   };
 
