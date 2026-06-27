@@ -32,14 +32,14 @@ def set_refresh_cookie(response: Response, token: str):
         secure=COOKIE_SECURE,
         samesite=COOKIE_SAMESITE,
         max_age=COOKIE_MAX_AGE,
-        path="/auth/refresh",
+        path="/auth",
     )
 
 
 def clear_refresh_cookie(response: Response):
     response.delete_cookie(
         key=COOKIE_NAME,
-        path="/auth/refresh",
+        path="/auth",
     )
 
 
