@@ -1,0 +1,9 @@
+
+cookies.txt
+*.bak
+*.pyx
+__pycache__/
+jar.txt
+__pycache__/
+venv/
+.env
