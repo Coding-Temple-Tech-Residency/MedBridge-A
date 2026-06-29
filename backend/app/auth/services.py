@@ -1,3 +1,4 @@
+from app.audit.services import AuditService
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -11,7 +12,6 @@ from app.auth.auth_repo import AuthRepository
 from app.auth.schemas import UserCreate
 
 # Optional: enable audit logging
-# from app.audit.services import AuditService
 
 
 class AuthService:
@@ -31,7 +31,7 @@ class AuthService:
         user = UsersRepository.create(db, user_in)
 
 
-        # AuditService.log_event(db, "REGISTER_SUCCESS", user_id=str(user.id))
+        AuditService.log_event(db, "register.success", user_id=user.id)
 
         return user
 
@@ -43,7 +43,7 @@ class AuthService:
         user = UsersRepository.get_by_email(db, login_in.email)
         # NOTE: model field is `hashed_password`, not `password`
         if not user or not verify_password(login_in.password, user.hashed_password):
-        # AuditService.log_event(db, "LOGIN_FAILED", metadata={"email": email})
+            AuditService.log_event(db, "login.failure", detail={"email": login_in.email})
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
@@ -55,7 +55,8 @@ class AuthService:
         refresh_record = AuthRepository.create_refresh_token(db, user.id, user_agent)
         refresh = refresh_record.token
 
-        # AuditService.log_event(db, "LOGIN_SUCCESS", user_id=str(user.id))
+        AuditService.log_event(db, "login.success", user_id=user.id)
+
 
         return access, refresh
 
@@ -75,7 +76,7 @@ class AuthService:
         # 2. Reuse of a revoked token => compromised session, revoke everything
         if record.revoked:
             AuthRepository.revoke_all_for_user(db, record.user_id)
-            # AuditService.log_event(db, "REFRESH_REUSE_DETECTED", user_id=str(record.user_id))
+            AuditService.log_event(db, "token.reuse_detected", user_id=record.user_id)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Refresh token reuse detected. All sessions revoked.",
@@ -93,7 +94,7 @@ class AuthService:
         # 5. New access token (user identity comes from the DB row, not a decode)
         new_access = create_access_token({"sub": str(record.user_id)})
 
-        # AuditService.log_event(db, "REFRESH_ROTATED", user_id=str(record.user_id))
+        AuditService.log_event(db, "token.refresh", user_id=record.user_id)
 
         return new_access, new_refresh
 
@@ -111,7 +112,7 @@ class AuthService:
 
         AuthRepository.revoke_token(db, record)
 
-        # AuditService.log_event(db, "LOGOUT", user_id=str(record.user_id))
+        AuditService.log_event(db, "logout", user_id=record.user_id)
 
         return {"message": "Logged out successfully"}
 
