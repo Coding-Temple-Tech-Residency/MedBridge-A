@@ -1,38 +1,26 @@
-<<<<<<< HEAD
 from datetime import datetime, timedelta
 
-=======
-
-from datetime import datetime, timedelta
->>>>>>> main
 from sqlalchemy import (
     Column,
     Integer,
     String,
     Boolean,
     DateTime,
-<<<<<<< HEAD
     Date,
     Float,
     Text,
     ForeignKey,
     JSON,
-=======
-    ForeignKey,
->>>>>>> main
 )
 from sqlalchemy.orm import relationship
 
 from .database import Base
 
 
-<<<<<<< HEAD
 # ---------------------------------------------------------------------------
 # AUTH  (preserved exactly as the working version — do not change the columns
 # the auth flow depends on; we only ADD created_at and role to User)
 # ---------------------------------------------------------------------------
-=======
->>>>>>> main
 class User(Base):
     __tablename__ = "users"
 
@@ -41,7 +29,6 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
 
-<<<<<<< HEAD
     # --- added for analytics + access control ---
     role = Column(String, nullable=False, default="patient")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -53,9 +40,6 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user")
     audit_entries = relationship("AuditLog", back_populates="user")
     usage_events = relationship("UsageEvent", back_populates="user")
-=======
-    refresh_tokens = relationship("RefreshToken", back_populates="user")
->>>>>>> main
 
 
 class RefreshToken(Base):
@@ -74,7 +58,6 @@ class RefreshToken(Base):
     @staticmethod
     def default_expiry(days: int = 30) -> datetime:
         return datetime.utcnow() + timedelta(days=days)
-<<<<<<< HEAD
 
 
 # ---------------------------------------------------------------------------
@@ -194,5 +177,3 @@ class UsageEvent(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
     user = relationship("User", back_populates="usage_events")
-=======
->>>>>>> main
