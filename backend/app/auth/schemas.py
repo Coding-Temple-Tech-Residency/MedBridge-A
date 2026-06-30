@@ -12,7 +12,9 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     id: int
+    email : str
     is_active: bool
+    role : str| None = None
 
     class Config:
         from_attributes = True

@@ -14,7 +14,7 @@ class AuthRepository:
         db: Session,
         user_id: int,
         user_agent: str | None = None,
-        days_valid: int = 30,
+        days_valid: int = 7,
     ) -> models.RefreshToken:
         token_str = str(uuid4())
         refresh = models.RefreshToken(
@@ -42,7 +42,7 @@ class AuthRepository:
         db: Session,
         old_token: models.RefreshToken,
         user_agent: str | None = None,
-        days_valid: int = 30,
+        days_valid: int = 7,
     ) -> models.RefreshToken:
         old_token.revoked = True
         db.add(old_token)

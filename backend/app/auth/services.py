@@ -102,7 +102,7 @@ class AuthService:
     # LOGOUT (ONE SESSION)
     # ==========================
     @staticmethod
-    def logout(db: Session, current_user, refresh_token: str):
+    def logout(db: Session, refresh_token: str):
         record = AuthRepository.get_refresh_token(db, refresh_token)
         if not record:
             raise HTTPException(
@@ -114,7 +114,9 @@ class AuthService:
 
         AuditService.log_event(db, "logout", user_id=record.user_id)
 
-        return {"message": "Logged out successfully"}
+        return {"detail": "Logged out"}
+        
+     
 
     # ==========================
     # LOGOUT ALL SESSIONS
