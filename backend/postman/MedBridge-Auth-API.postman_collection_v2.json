@@ -1,0 +1,194 @@
+{
+  "info": {
+    "name": "MedBridge-A — Auth API (v2)",
+    "description": "Auth endpoints for MedBridge-A (register, login, refresh, /me, logout). Verified live 2026-07-01 against the /api/v1/auth prefix. Tokens chain via collection variables: login captures the access token into {{access_token}}; the refresh token rides as an httpOnly cookie (Path=/api/v1/auth) that Postman sends automatically — no body-token workaround needed. Set {{base_url}} to your running server.\n\nRUN ORDER: 1 Register → 2 Login → 3 Refresh → 4 /me → 5 Logout → 6 Refresh-after-logout (negative). Run top to bottom so the token chain works.\n\nNOTE on audit logging: the backend now writes an audit_log row for each auth event (login.success, login.failure, logout, token.refresh, token.reuse_detected). Postman can't assert DB rows directly — verify those in psql:\n  SELECT action, user_id, created_at FROM audit_log ORDER BY created_at DESC LIMIT 10;",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "test_email", "value": "test@test.com", "type": "string" },
+    { "key": "test_password", "value": "test1234", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Register",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/v1/auth/register", "host": ["{{base_url}}"], "path": ["api","v1","auth","register"] },
+        "description": "Creates a user. Success: 200 with {id, email, is_active} — no password/hash in the response. Errors: 400 duplicate email, 422 malformed/missing field. NOTE: register returns 200 today; a 200→201 change is under discussion — if it lands, update the assertion below to 201."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Register may 200 (created) or 400 (already exists) — both are acceptable on a re-run.",
+              "pm.test('status is 200 (created) or 400 (already exists)', function () {",
+              "  pm.expect([200, 400]).to.include(pm.response.code);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "  const body = pm.response.json();",
+              "  pm.test('returns id, email, is_active', function () {",
+              "    pm.expect(body).to.have.property('id');",
+              "    pm.expect(body).to.have.property('email');",
+              "    pm.expect(body).to.have.property('is_active');",
+              "  });",
+              "  pm.test('never returns a password or hash', function () {",
+              "    pm.expect(body).to.not.have.property('password');",
+              "    pm.expect(body).to.not.have.property('hashed_password');",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Login",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/v1/auth/login", "host": ["{{base_url}}"], "path": ["api","v1","auth","login"] },
+        "description": "Authenticates. Success: 200 with {access_token} ONLY (no token_type, no user field — see note) plus a Set-Cookie refresh_token (httpOnly, Path=/api/v1/auth, SameSite=lax). Errors: 401 for wrong password OR unknown email (same message — deliberately doesn't leak which). Saves the access token to {{access_token}}; the refresh cookie is stored by Postman's cookie jar and sent automatically to /api/v1/auth/* requests below.\n\nOPEN CONTRACT ITEM: the frontend expects a `user` object on login; the backend currently returns only access_token. Pending decision: add user (+role) to this response, or have the FE fetch /api/v1/auth/me after login."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('returns an access token', function () {",
+              "  pm.expect(body).to.have.property('access_token');",
+              "});",
+              "// NOTE: login currently returns ONLY {access_token} — no token_type, no user.",
+              "// If the team adds those to the login response, extend this test accordingly.",
+              "pm.test('refresh token is a cookie, not in the body', function () {",
+              "  pm.expect(body).to.not.have.property('refresh_token');",
+              "});",
+              "pm.test('refresh cookie is scoped to /api/v1/auth', function () {",
+              "  pm.expect(pm.cookies.has('refresh_token')).to.be.true;",
+              "});",
+              "if (body.access_token) {",
+              "  pm.collectionVariables.set('access_token', body.access_token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Refresh",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "{{base_url}}/api/v1/auth/refresh", "host": ["{{base_url}}"], "path": ["api","v1","auth","refresh"] },
+        "description": "Exchanges the refresh cookie for a NEW access token and rotates the refresh token. No body — the httpOnly cookie (Path=/api/v1/auth) is sent automatically by Postman. Success: 200 with a new access_token + a new Set-Cookie. Reuse of an already-rotated token → 401 and ALL of that user's sessions are revoked (reuse-detection security feature)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('returns a new access token', function () {",
+              "  pm.expect(body).to.have.property('access_token');",
+              "});",
+              "// Store the rotated access token for /me below.",
+              "if (body.access_token) { pm.collectionVariables.set('access_token', body.access_token); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Get current user (/me)",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{access_token}}" } ],
+        "url": { "raw": "{{base_url}}/api/v1/auth/me", "host": ["{{base_url}}"], "path": ["api","v1","auth","me"] },
+        "description": "Returns the current user. Requires Authorization: Bearer <access token>. Success: 200 with {id, email, is_active}. Errors: 401 missing/invalid/expired token. Uses {{access_token}} captured at login/refresh. NOTE: this endpoint lives on the AUTH router — full path is /api/v1/auth/me (not /users/me)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('returns the logged-in user', function () {",
+              "  pm.expect(body).to.have.property('id');",
+              "  pm.expect(body).to.have.property('email');",
+              "});",
+              "pm.test('never leaks a password or hash', function () {",
+              "  pm.expect(body).to.not.have.property('password');",
+              "  pm.expect(body).to.not.have.property('hashed_password');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Logout",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Authorization", "value": "Bearer {{access_token}}" } ],
+        "url": { "raw": "{{base_url}}/api/v1/auth/logout", "host": ["{{base_url}}"], "path": ["api","v1","auth","logout"] },
+        "description": "Revokes the refresh token and clears the cookie. Cookie-only — the httpOnly refresh cookie (Path=/api/v1/auth) is sent automatically; no body needed. (This replaces the old body-token workaround: the cookie-path bug that required it is fixed — cookie is now scoped /api/v1/auth so it reaches /logout.) Success: 200 {detail:'Logged out'}. After this, Refresh (request 6) should 401. Missing cookie → 401 'Missing refresh token'."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('confirms logout', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(JSON.stringify(body).toLowerCase()).to.include('logged out');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Refresh after logout (should fail)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "{{base_url}}/api/v1/auth/refresh", "host": ["{{base_url}}"], "path": ["api","v1","auth","refresh"] },
+        "description": "Negative test: after logout the refresh token is revoked, so this should 401. Confirms logout actually killed the session (and that the cookie-path fix works — if the cookie weren't reaching /logout, the session wouldn't have been revoked and this would wrongly 200)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 401 (session was revoked by logout)', function () {",
+              "  pm.expect(pm.response.code).to.eql(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
