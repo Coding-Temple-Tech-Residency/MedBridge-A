@@ -11,6 +11,7 @@ from .schemas import (
     Token,
     RefreshRequest,
     LogoutRequest,
+    LoginResponse,
 )
 from .services import AuthService
 
@@ -49,15 +50,15 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     
 
 
-@router.post("/login")
+@router.post("/login", response_model=LoginResponse)
 def login(
     login_in: LoginRequest,response: Response,
     db: Session = Depends(get_db),
     user_agent: str | None = Header(default=None, alias="User-Agent"),
     ):
-    access, refresh = AuthService.login(db, login_in, user_agent)
+    access, refresh, user = AuthService.login(db, login_in, user_agent)
     set_refresh_cookie(response, refresh)
-    return {"access_token": access}
+    return {"access_token": access, "token_type": "bearer", "user": user}
 
 
 @router.post("/refresh")

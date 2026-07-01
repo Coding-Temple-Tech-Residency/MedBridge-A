@@ -29,6 +29,10 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserRead
 
 class RefreshRequest(BaseModel):
     refresh_token: str | None = None  # optional if using cookie only
