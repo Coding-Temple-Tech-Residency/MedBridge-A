@@ -25,7 +25,7 @@ def get_current_user(
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="Invalid or expired token",
         )
     if "sub" not in payload:
         raise HTTPException(
