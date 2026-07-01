@@ -24,7 +24,6 @@ app.add_middleware(
 
 app.include_router(auth_router, prefix="/api/v1/auth")
 
-
 @app.get("/")
 def root():
     return {"message": "OK"}
