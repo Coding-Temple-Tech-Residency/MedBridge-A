@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
-import Header from './components/Header';
 import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
@@ -8,14 +7,11 @@ import ResultsPage from './components/ResultsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import NotFoundPage from './components/NotFoundPage';
+import DashboardPage from './components/DashboardPage';
+import DashboardLayout from './components/DashboardLayout';
 
-// ── Protected layout: Header + page content ───────────────────────────────────
-const AppLayout: React.FC = () => (
-  <div className="min-h-screen">
-    <Header />
-    <Outlet />
-  </div>
-);
+// ── Public layout ─────────────────────────────────────────────────────────────
+const PublicLayout: React.FC = () => <Outlet />;
 
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
@@ -24,23 +20,23 @@ function App() {
       <Routes>
         {/* Public routes — redirect to /dashboard when already authenticated */}
         <Route element={<PublicRoute />}>
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<LandingPage />} />
+          </Route>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
         {/* Protected routes — redirect to /login when unauthenticated */}
         <Route element={<ProtectedRoute />}>
-          <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<LandingPage />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/results" element={<ResultsPage />} />
           </Route>
         </Route>
 
-        {/* Default redirect and 404 */}
-        <Route path="/" element={<PublicRoute />}>
-          <Route index element={<LoginPage />} />
-        </Route>
+        {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
