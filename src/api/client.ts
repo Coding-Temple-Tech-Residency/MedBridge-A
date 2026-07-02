@@ -2,7 +2,7 @@
 //
 // - Base URL is read from the validated env config.
 // - `credentials: 'include'` ensures the HttpOnly refresh-token cookie is
-//   sent automatically on every request (including /auth/refresh).
+//   sent automatically on every request (including /api/v1/auth/refresh).
 // - Access tokens are injected via the Authorization header on every request.
 // - On a 401 response, the client silently attempts a token refresh. If the
 //   refresh succeeds the original request is retried. If the refresh also
@@ -41,7 +41,7 @@ async function request<T>(
   // Attempt a silent token refresh on 401, then retry once.
   if (res.status === 401 && !_retry) {
     try {
-      const refreshRes = await fetch(`${env.apiBaseUrl}/api/auth/refresh`, {
+      const refreshRes = await fetch(`${env.apiBaseUrl}/api/v1/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
       });

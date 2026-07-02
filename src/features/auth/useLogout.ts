@@ -7,7 +7,7 @@ export function useLogout() {
 
   const logout = async () => {
     try {
-      await apiClient.post('/api/auth/logout');
+      await apiClient.post('/api/v1/auth/logout');
     } catch {
       // Always clear the client-side session, even if the server call fails
     } finally {

@@ -14,7 +14,7 @@ export function useLogin() {
 
   const mutation = useMutation({
     mutationFn: async (input: LoginInput) => {
-      const res = await apiClient.post<LoginResponse>('/api/auth/login', input);
+      const res = await apiClient.post<LoginResponse>('/api/v1/auth/login', input);
       return res.data;
     },
     onMutate: () => setFormError(null),
