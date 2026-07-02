@@ -1,13 +1,16 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
-import LoginPage from './components/LoginPage';
+import { LoginPage } from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import UploadPage from './components/UploadPage';
 import ResultsPage from './components/ResultsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import NotFoundPage from './components/NotFoundPage';
+
+const queryClient = new QueryClient();
 
 // ── Protected layout: Header + page content ───────────────────────────────────
 const AppLayout: React.FC = () => (
@@ -20,7 +23,8 @@ const AppLayout: React.FC = () => (
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
   return (
-    <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
       <Routes>
         {/* Public routes — redirect to /dashboard when already authenticated */}
         <Route element={<PublicRoute />}>
@@ -44,6 +48,7 @@ function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

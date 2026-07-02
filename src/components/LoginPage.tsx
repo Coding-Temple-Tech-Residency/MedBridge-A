@@ -1,38 +1,23 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Button from './UI/Button';
 import Input from './UI/Input';
 import Card from './UI/Card';
+import { useLogin } from '@/features/auth/useLogin';
+import { validateLoginForm } from '@/features/auth/validation';
 
-const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
+export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const { login, isPending, formError } = useLogin();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (!email.trim() || !password.trim()) {
-      setError('Please enter your email and password.');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-
-    setLoading(true);
-    // Simulate authentication delay
-    setTimeout(() => {
-      setLoading(false);
-      localStorage.setItem('auth_token', 'mock-token');
-      navigate('/dashboard');
-    }, 800);
+    const errors = validateLoginForm({ email, password });
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    login({ email, password });
   };
 
   return (
@@ -56,7 +41,8 @@ const LoginPage: React.FC = () => {
         <Card className="p-8 shadow-2xl">
           <h2 className="text-2xl font-bold text-[#1E3A2F] mb-1">Welcome back</h2>
           <p className="text-gray-500 text-sm mb-7">Sign in to access your health companion</p>
-          <form onSubmit={handleSubmit} noValidate> 
+
+          <form onSubmit={handleSubmit} noValidate>
             <Input
               id="email"
               label="Email address"
@@ -65,6 +51,7 @@ const LoginPage: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
+              error={fieldErrors.email}
               className="mb-5"
             />
 
@@ -76,21 +63,26 @@ const LoginPage: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              error={fieldErrors.password}
               className="mb-6"
             />
 
-            {error && (
-              <div className="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
-                {error}
+            {/* Generic server/auth error — intentionally non-specific (FE-5 AC) */}
+            {formError && (
+              <div
+                role="alert"
+                className="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3"
+              >
+                {formError}
               </div>
             )}
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={isPending}
               className="w-full py-3.5 shadow-md hover:shadow-lg"
             >
-              {loading ? 'Signing in…' : 'Sign In'}
+              {isPending ? 'Signing in…' : 'Sign In'}
             </Button>
           </form>
 
@@ -108,6 +100,6 @@ const LoginPage: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default LoginPage;
