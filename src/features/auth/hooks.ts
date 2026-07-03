@@ -15,7 +15,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { clearAccessToken, getAccessToken, setAccessToken } from '../../api/client';
+import { getAccessToken, setAccessToken } from './authToken';
 import {
   getCurrentUserApi,
   loginApi,
@@ -101,7 +101,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: logoutApi,
     onSettled: () => {
-      clearAccessToken();
+      setAccessToken(null);
       queryClient.clear();
     },
   });

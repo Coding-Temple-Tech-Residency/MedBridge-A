@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Button from './UI/Button';
 import Input from './UI/Input';
@@ -6,19 +6,36 @@ import Card from './UI/Card';
 import { useLogin } from '@/features/auth/useLogin';
 import { validateLoginForm } from '@/features/auth/validation';
 
-export function LoginPage() {
+const LoginPage: React.FC = () => {
+  const { login, isPending, formError } = useLogin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
-  const { login, isPending, formError } = useLogin();
+  const [clientError, setClientError] = useState('');
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('session_expired') === '1') {
+      setSessionExpired(true);
+      sessionStorage.removeItem('session_expired');
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setClientError('');
+    setSessionExpired(false);
+
     const errors = validateLoginForm({ email, password });
-    setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-    login({ email, password });
+    const firstError = errors.email ?? errors.password;
+    if (firstError) {
+      setClientError(firstError);
+      return;
+    }
+
+    login({ email: email.trim(), password });
   };
+
+  const displayError = clientError || formError;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#3C936A] via-[#57A97F] to-[#83CDA6] flex items-center justify-center p-6">
@@ -32,7 +49,7 @@ export function LoginPage() {
           <img
             src="/logo.png"
             alt="MedBridge logo"
-            className="h-28 w-auto mb-4 drop-shadow-md select-none"
+            className="h-52 w-auto drop-shadow-lg select-none"
             style={{ mixBlendMode: 'multiply' }}
           />
         </div>
@@ -41,6 +58,15 @@ export function LoginPage() {
         <Card className="p-8 shadow-2xl">
           <h2 className="text-2xl font-bold text-[#1E3A2F] mb-1">Welcome back</h2>
           <p className="text-gray-500 text-sm mb-7">Sign in to access your health companion</p>
+
+          {sessionExpired && (
+            <div
+              role="status"
+              className="mb-5 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-3"
+            >
+              Your session has expired. Please sign in again.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} noValidate>
             <Input
@@ -51,7 +77,6 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              error={fieldErrors.email}
               className="mb-5"
             />
 
@@ -63,17 +88,15 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              error={fieldErrors.password}
               className="mb-6"
             />
 
-            {/* Generic server/auth error — intentionally non-specific (FE-5 AC) */}
-            {formError && (
+            {displayError && (
               <div
                 role="alert"
                 className="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3"
               >
-                {formError}
+                {displayError}
               </div>
             )}
 
@@ -100,6 +123,7 @@ export function LoginPage() {
       </div>
     </div>
   );
-}
+};
 
+export { LoginPage };
 export default LoginPage;

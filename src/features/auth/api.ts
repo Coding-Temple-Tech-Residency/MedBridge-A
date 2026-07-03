@@ -6,7 +6,7 @@
  * called independently (e.g. in tests or non-component code).
  */
 
-import { apiFetch } from '../../api/client';
+import { apiClient } from '../../api/client';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
 
@@ -42,20 +42,14 @@ export type RegisterResponse = User;
 
 /** POST /api/v1/auth/login */
 export async function loginApi(credentials: LoginRequest): Promise<LoginResponse> {
-  return apiFetch<LoginResponse>('/api/v1/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(credentials),
-    skipAuth: true,
-  });
+  const res = await apiClient.post<LoginResponse>('/api/v1/auth/login', credentials);
+  return res.data;
 }
 
 /** POST /api/v1/auth/register */
 export async function registerApi(data: RegisterRequest): Promise<RegisterResponse> {
-  return apiFetch<RegisterResponse>('/api/v1/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(data),
-    skipAuth: true,
-  });
+  const res = await apiClient.post<RegisterResponse>('/api/v1/auth/register', data);
+  return res.data;
 }
 
 /**
@@ -64,10 +58,11 @@ export async function registerApi(data: RegisterRequest): Promise<RegisterRespon
  * Returns void — the server responds with 204 No Content on success.
  */
 export async function logoutApi(): Promise<void> {
-  return apiFetch<void>('/api/v1/auth/logout', { method: 'POST' });
+  await apiClient.post('/api/v1/auth/logout');
 }
 
 /** GET /api/v1/users/me */
 export async function getCurrentUserApi(): Promise<User> {
-  return apiFetch<User>('/api/v1/users/me');
+  const res = await apiClient.get<User>('/api/v1/users/me');
+  return res.data;
 }
