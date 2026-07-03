@@ -6,11 +6,7 @@ import { setAccessToken } from './authToken';
 
 type LoginInput = { email: string; password: string };
 // access_token matches the snake_case shape returned by POST /api/v1/auth/login
-type LoginResponse = {
-  access_token: string;
-  token_type: string;
-  user: { id: number; role: string };
-};
+type LoginResponse = { access_token: string; user: { id: string; role: string } };
 
 export function useLogin() {
   const navigate = useNavigate();

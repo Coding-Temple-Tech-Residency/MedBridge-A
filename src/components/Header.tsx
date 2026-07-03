@@ -1,20 +1,12 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import Button from './UI/Button';
-import { setAccessToken } from '@/features/auth/authToken';
-import { apiClient } from '@/api/client';
+import { useLogout } from '@/features/auth/useLogout';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-
-  const handleLogout = () => {
-    setAccessToken(null);
-    // Fire-and-forget: revokes the refresh cookie on the server.
-    // Navigation proceeds immediately so the user is never blocked.
-    apiClient.post('/api/v1/auth/logout').catch(() => undefined);
-    navigate('/login');
-  };
+  const logout = useLogout();
 
   return (
     <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-20">
@@ -43,12 +35,10 @@ const Header: React.FC = () => {
             </button>
           )}
           {pathname === '/dashboard' && (
-            <Button onClick={() => navigate('/upload')}>
-              Try It Free
-            </Button>
+            <Button onClick={() => navigate('/upload')}>Try It Free</Button>
           )}
           <button
-            onClick={handleLogout}
+            onClick={() => void logout()}
             className="text-sm text-gray-500 hover:text-[#1E3A2F] transition-colors font-medium"
           >
             Sign Out

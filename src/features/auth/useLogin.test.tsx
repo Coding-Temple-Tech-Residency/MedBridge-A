@@ -47,9 +47,7 @@ describe('useLogin', () => {
     const { result } = renderHook(() => useLogin(), { wrapper });
     act(() => result.current.login({ email: 'pat@example.com', password: 'wrong' }));
 
-    await waitFor(() =>
-      expect(result.current.formError).toBe('Invalid email or password.'),
-    );
+    await waitFor(() => expect(result.current.formError).toBe('Invalid email or password.'));
     expect(getAccessToken()).toBeNull();
     expect(navigateMock).not.toHaveBeenCalled();
   });

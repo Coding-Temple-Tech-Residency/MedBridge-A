@@ -6,14 +6,32 @@
 // (so it is never readable from JS). For that cookie to ride along with API
 // requests, the apiClient must be configured with `withCredentials: true`.
 //
-// NOTE: This storage strategy is pending final confirmation at the FE-08 API
-// contract sync. If the team lands on a different approach, this file is the
-// only place that should need to change.
+// Callbacks allow non-React code (e.g. the API client) to notify the React
+// auth context when the token changes or when a forced logout is required.
 
 let accessToken: string | null = null;
 
+let _onTokenChange: ((token: string | null) => void) | null = null;
+let _onForceLogout: (() => void) | null = null;
+
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
+  _onTokenChange?.(token);
 };
 
 export const getAccessToken = () => accessToken;
+
+/** Called by AuthContext to receive reactive token updates. */
+export const registerTokenChangeCallback = (cb: (token: string | null) => void) => {
+  _onTokenChange = cb;
+};
+
+/** Called by AuthContext to handle forced logout (e.g. refresh token expired). */
+export const registerForceLogoutCallback = (cb: () => void) => {
+  _onForceLogout = cb;
+};
+
+/** Triggered by the API client when a token refresh fails. */
+export const triggerForceLogout = () => {
+  _onForceLogout?.();
+};
