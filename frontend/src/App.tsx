@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
@@ -8,6 +9,9 @@ import ResultsPage from './components/ResultsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import NotFoundPage from './components/NotFoundPage';
+import { AuthProvider } from './features/auth/AuthContext';
+
+const queryClient = new QueryClient();
 
 // ── Protected layout: Header + page content ───────────────────────────────────
 const AppLayout: React.FC = () => (
@@ -20,30 +24,34 @@ const AppLayout: React.FC = () => (
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public routes — redirect to /dashboard when already authenticated */}
-        <Route element={<PublicRoute />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-        </Route>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes — redirect to /dashboard when already authenticated */}
+            <Route element={<PublicRoute />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+            </Route>
 
-        {/* Protected routes — redirect to /login when unauthenticated */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<LandingPage />} />
-            <Route path="/upload" element={<UploadPage />} />
-            <Route path="/results" element={<ResultsPage />} />
-          </Route>
-        </Route>
+            {/* Protected routes — redirect to /login when unauthenticated */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<LandingPage />} />
+                <Route path="/upload" element={<UploadPage />} />
+                <Route path="/results" element={<ResultsPage />} />
+              </Route>
+            </Route>
 
-        {/* Default redirect and 404 */}
-        <Route path="/" element={<PublicRoute />}>
-          <Route index element={<LoginPage />} />
-        </Route>
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </BrowserRouter>
+            {/* Default redirect and 404 */}
+            <Route path="/" element={<PublicRoute />}>
+              <Route index element={<LoginPage />} />
+            </Route>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

@@ -1,39 +1,41 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Button from './UI/Button';
 import Input from './UI/Input';
 import Card from './UI/Card';
+import { useLogin } from '@/features/auth/useLogin';
+import { validateLoginForm } from '@/features/auth/validation';
 
 const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
+  const { login, isPending, formError } = useLogin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [clientError, setClientError] = useState('');
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('session_expired') === '1') {
+      setSessionExpired(true);
+      sessionStorage.removeItem('session_expired');
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setClientError('');
+    setSessionExpired(false);
 
-    if (!email.trim() || !password.trim()) {
-      setError('Please enter your email and password.');
+    const errors = validateLoginForm({ email, password });
+    const firstError = errors.email ?? errors.password;
+    if (firstError) {
+      setClientError(firstError);
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-
-    setLoading(true);
-    // Simulate authentication delay
-    setTimeout(() => {
-      setLoading(false);
-      localStorage.setItem('auth_token', 'mock-token');
-      navigate('/dashboard');
-    }, 800);
+    login({ email: email.trim(), password });
   };
+
+  const displayError = clientError || formError;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#3C936A] via-[#57A97F] to-[#83CDA6] flex items-center justify-center p-6">
@@ -47,7 +49,7 @@ const LoginPage: React.FC = () => {
           <img
             src="/logo.png"
             alt="MedBridge logo"
-            className="h-28 w-auto mb-4 drop-shadow-md select-none"
+            className="h-52 w-auto drop-shadow-lg select-none"
             style={{ mixBlendMode: 'multiply' }}
           />
         </div>
@@ -56,7 +58,17 @@ const LoginPage: React.FC = () => {
         <Card className="p-8 shadow-2xl">
           <h2 className="text-2xl font-bold text-[#1E3A2F] mb-1">Welcome back</h2>
           <p className="text-gray-500 text-sm mb-7">Sign in to access your health companion</p>
-          <form onSubmit={handleSubmit} noValidate> 
+
+          {sessionExpired && (
+            <div
+              role="status"
+              className="mb-5 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-3"
+            >
+              Your session has expired. Please sign in again.
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
             <Input
               id="email"
               label="Email address"
@@ -79,18 +91,21 @@ const LoginPage: React.FC = () => {
               className="mb-6"
             />
 
-            {error && (
-              <div className="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
-                {error}
+            {displayError && (
+              <div
+                role="alert"
+                className="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3"
+              >
+                {displayError}
               </div>
             )}
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={isPending}
               className="w-full py-3.5 shadow-md hover:shadow-lg"
             >
-              {loading ? 'Signing in…' : 'Sign In'}
+              {isPending ? 'Signing in…' : 'Sign In'}
             </Button>
           </form>
 
@@ -110,4 +125,5 @@ const LoginPage: React.FC = () => {
   );
 };
 
+export { LoginPage };
 export default LoginPage;
