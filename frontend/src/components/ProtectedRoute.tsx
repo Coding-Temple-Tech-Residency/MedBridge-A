@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@/features/auth/AuthContext';
-
-const ProtectedRoute: React.FC = () => {
+// ...existing code...
+import { AuthContext } from '../features/auth/AuthContext'; // adjust ../ levels as needed
+// ...existing code...const ProtectedRoute: React.FC = () => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 };

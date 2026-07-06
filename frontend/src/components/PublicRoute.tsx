@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@/features/auth/AuthContext';
+ import { useAuth } from '/src/api/features/auth/AuthContext';
 
 const PublicRoute: React.FC = () => {
   const { isAuthenticated } = useAuth();
