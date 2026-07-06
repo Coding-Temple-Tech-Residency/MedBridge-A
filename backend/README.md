@@ -41,6 +41,7 @@ createdb healthcare               # or: psql -c "CREATE DATABASE healthcare;"
 # 6. Run migrations (once Alembic is set up)
 # alembic upgrade head
 
-# 7. Start the dev server
+# 7. Start the dev server (run this from the backend folder)
+cd backend
 fastapi dev app/main.py
 ```
