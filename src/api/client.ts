@@ -1,143 +1,82 @@
-/**
- * Base HTTP client for all API calls.
- *
- * Responsibilities:
- *  - Attach the Authorization header using the access token from localStorage.
- *  - On a 401, attempt a silent token refresh via the httpOnly refresh cookie.
- *    If the refresh succeeds the original request is retried once with the new token.
- *    If the refresh fails the token is cleared and the user is redirected to /login.
- *  - Parse error bodies and throw an `ApiError` so every caller gets consistent error
- *    shapes regardless of which endpoint failed.
- */
+// Thin fetch wrapper used by all feature hooks.
+//
+// - Base URL is read from the validated env config.
+// - `credentials: 'include'` ensures the HttpOnly refresh-token cookie is
+//   sent automatically on every request (including /api/v1/auth/refresh).
+// - Access tokens are injected via the Authorization header on every request.
+// - On a 401 response, the client silently attempts a token refresh. If the
+//   refresh succeeds the original request is retried. If the refresh also
+//   fails, the client triggers a forced logout (via authToken callbacks) and
+//   the user is redirected to the login screen with a session-expired notice.
 
-import { env } from '../env';
-import { ApiError } from './errors';
+import { env } from '@/env';
+import { getAccessToken, setAccessToken, triggerForceLogout } from '@/features/auth/authToken';
 
-// ── Token helpers ─────────────────────────────────────────────────────────────
-
-const TOKEN_KEY = 'auth_token';
-
-export function getAccessToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setAccessToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearAccessToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-// ── Internal ──────────────────────────────────────────────────────────────────
-
-type RequestOptions = RequestInit & {
-  /** Skip attaching the Authorization header (e.g. login / register). */
-  skipAuth?: boolean;
+type RequestOptions = Omit<RequestInit, 'body'> & {
+  data?: unknown;
+  _retry?: boolean;
 };
 
-/**
- * Call `/auth/refresh` and return the new access token, or null if the refresh
- * cookie is missing / expired.
- */
-async function refreshAccessToken(): Promise<string | null> {
-  const response = await fetch(`${env.apiBaseUrl}/api/v1/auth/refresh`, {
-    method: 'POST',
-    credentials: 'include', // the httpOnly refresh cookie rides along automatically
-  });
-
-  if (!response.ok) return null;
-
-  const data: { access_token: string } = await response.json();
-  return data.access_token ?? null;
-}
-
-// In-flight refresh promise, shared across concurrent 401s so only one
-// `/auth/refresh` request goes out at a time. Without this, concurrent 401s
-// each call refreshAccessToken() independently, and the second call reuses a
-// refresh token already consumed by the first — tripping BE reuse-detection.
-let refreshPromise: Promise<string | null> | null = null;
-
-function refreshAccessTokenOnce(): Promise<string | null> {
-  if (!refreshPromise) {
-    refreshPromise = refreshAccessToken().finally(() => {
-      refreshPromise = null;
-    });
-  }
-  return refreshPromise;
-}
-
-/**
- * Internal fetch wrapper that handles token injection and the one-time retry
- * after a successful token refresh.
- */
-async function apiFetchInner(
+async function request<T>(
+  method: string,
   path: string,
   options: RequestOptions = {},
-  canRetry = true,
-): Promise<Response> {
-  const { skipAuth = false, headers: extraHeaders, ...rest } = options;
+): Promise<{ data: T }> {
+  const { data, headers, _retry, ...rest } = options;
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(extraHeaders as Record<string, string> | undefined),
-  };
+  const token = getAccessToken();
 
-  if (!skipAuth) {
-    const token = getAccessToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${env.apiBaseUrl}${path}`, {
-    ...rest,
-    headers,
+  const res = await fetch(`${env.apiBaseUrl}${path}`, {
+    method,
     credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    },
+    body: data !== undefined ? JSON.stringify(data) : undefined,
+    ...rest,
   });
 
-  // Silent refresh on 401 — only try once.
-  if (response.status === 401 && canRetry && !skipAuth) {
-    const newToken = await refreshAccessTokenOnce();
-
-    if (newToken) {
-      setAccessToken(newToken);
-      return apiFetchInner(path, options, false);
-    }
-
-    // Refresh token is gone — session is over.
-    clearAccessToken();
-    window.location.href = '/login';
-  }
-
-  return response;
-}
-
-// ── Public API ────────────────────────────────────────────────────────────────
-
-/**
- * Typed fetch helper.
- *
- * Usage:
- *   const user = await apiFetch<User>('/api/v1/auth/me');
- *   await apiFetch<void>('/api/v1/auth/logout', { method: 'POST' });
- */
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const response = await apiFetchInner(path, options);
-
-  if (!response.ok) {
-    let detail = `Request failed with status ${response.status}`;
+  // Attempt a silent token refresh on 401, then retry once.
+  if (res.status === 401 && !_retry) {
     try {
-      const body: { detail?: string } = await response.json();
-      if (typeof body.detail === 'string') detail = body.detail;
+      const refreshRes = await fetch(`${env.apiBaseUrl}/api/v1/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (refreshRes.ok) {
+        const refreshData = (await refreshRes.json()) as { access_token: string };
+        setAccessToken(refreshData.access_token);
+        return request<T>(method, path, { ...options, _retry: true });
+      }
     } catch {
-      // Non-JSON error body — fall back to the generic message above.
+      // Network error during refresh — fall through to force logout
     }
-    throw new ApiError(response.status, detail);
+
+    // Refresh failed: clear the session and redirect to login
+    setAccessToken(null);
+    triggerForceLogout();
+    throw { response: { status: 401, data: null } };
   }
 
-  // 204 No Content — valid success with no body.
-  if (response.status === 204) {
-    return undefined as T;
+  if (!res.ok) {
+    const error: { response: { status: number; data: unknown } } = {
+      response: {
+        status: res.status,
+        data: await res.json().catch(() => null),
+      },
+    };
+    throw error;
   }
 
-  return response.json() as Promise<T>;
+  const json = res.status === 204 ? null : await res.json();
+  return { data: json as T };
 }
+
+export const apiClient = {
+  post: <T>(path: string, data?: unknown, options?: Omit<RequestOptions, 'data'>) =>
+    request<T>('POST', path, { ...options, data }),
+  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
+};
