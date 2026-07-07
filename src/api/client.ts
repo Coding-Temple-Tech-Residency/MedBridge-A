@@ -1,62 +1,31 @@
-/**
- * Base HTTP client for all API calls.
- *
- * Responsibilities:
- *  - Attach the Authorization header using the access token from localStorage.
- *  - On a 401, attempt a silent token refresh via the httpOnly refresh cookie.
- *    If the refresh succeeds the original request is retried once with the new token.
- *    If the refresh fails the token is cleared and the user is redirected to /login.
- *  - Parse error bodies and throw an `ApiError` so every caller gets consistent error
- *    shapes regardless of which endpoint failed.
- */
+// Thin fetch wrapper used by auth hooks and API call helpers.
+//
+// - Base URL comes from validated env config.
+// - `credentials: 'include'` ensures the HttpOnly refresh-token cookie is sent.
+// - Access tokens are injected via Authorization on every request.
+// - On 401, the client attempts one silent refresh and retries once.
 
-import { env } from '../env';
-import { ApiError } from './errors';
+import { env } from '@/env';
+import { getAccessToken as getToken, setAccessToken as setToken, triggerForceLogout } from '@/features/auth/authToken';
 
-// ── Token helpers ─────────────────────────────────────────────────────────────
-
-const TOKEN_KEY = 'auth_token';
-
-export function getAccessToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setAccessToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearAccessToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-// ── Internal ──────────────────────────────────────────────────────────────────
-
-type RequestOptions = RequestInit & {
-  /** Skip attaching the Authorization header (e.g. login / register). */
-  skipAuth?: boolean;
+type RequestOptions = Omit<RequestInit, 'body'> & {
+  data?: unknown;
+  _retry?: boolean;
 };
 
-/**
- * Call `/auth/refresh` and return the new access token, or null if the refresh
- * cookie is missing / expired.
- */
+let refreshPromise: Promise<string | null> | null = null;
+
 async function refreshAccessToken(): Promise<string | null> {
-  const response = await fetch(`${env.apiBaseUrl}/api/v1/auth/refresh`, {
+  const refreshRes = await fetch(`${env.apiBaseUrl}/api/v1/auth/refresh`, {
     method: 'POST',
-    credentials: 'include', // the httpOnly refresh cookie rides along automatically
+    credentials: 'include',
   });
 
-  if (!response.ok) return null;
+  if (!refreshRes.ok) return null;
 
-  const data: { access_token: string } = await response.json();
-  return data.access_token ?? null;
+  const refreshData = (await refreshRes.json()) as { access_token?: string };
+  return refreshData.access_token ?? null;
 }
-
-// In-flight refresh promise, shared across concurrent 401s so only one
-// `/auth/refresh` request goes out at a time. Without this, concurrent 401s
-// each call refreshAccessToken() independently, and the second call reuses a
-// refresh token already consumed by the first — tripping BE reuse-detection.
-let refreshPromise: Promise<string | null> | null = null;
 
 function refreshAccessTokenOnce(): Promise<string | null> {
   if (!refreshPromise) {
@@ -67,77 +36,71 @@ function refreshAccessTokenOnce(): Promise<string | null> {
   return refreshPromise;
 }
 
-/**
- * Internal fetch wrapper that handles token injection and the one-time retry
- * after a successful token refresh.
- */
-async function apiFetchInner(
+async function request<T>(
+  method: string,
   path: string,
   options: RequestOptions = {},
-  canRetry = true,
-): Promise<Response> {
-  const { skipAuth = false, headers: extraHeaders, ...rest } = options;
+): Promise<{ data: T }> {
+  const { data, headers, _retry, ...rest } = options;
+  const token = getToken();
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(extraHeaders as Record<string, string> | undefined),
-  };
-
-  if (!skipAuth) {
-    const token = getAccessToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${env.apiBaseUrl}${path}`, {
-    ...rest,
-    headers,
+  const res = await fetch(`${env.apiBaseUrl}${path}`, {
+    method,
     credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    },
+    body: data !== undefined ? JSON.stringify(data) : undefined,
+    ...rest,
   });
 
-  // Silent refresh on 401 — only try once.
-  if (response.status === 401 && canRetry && !skipAuth) {
-    const newToken = await refreshAccessTokenOnce();
+  if (res.status === 401 && !_retry) {
+    try {
+      const refreshedToken = await refreshAccessTokenOnce();
 
-    if (newToken) {
-      setAccessToken(newToken);
-      return apiFetchInner(path, options, false);
+      if (refreshedToken) {
+        setToken(refreshedToken);
+        return request<T>(method, path, { ...options, _retry: true });
+      }
+    } catch {
+      // Fall through to forced logout when refresh fails due to network/server issues.
     }
 
-    // Refresh token is gone — session is over.
-    clearAccessToken();
-    window.location.href = '/login';
+    setToken(null);
+    triggerForceLogout();
+    throw { response: { status: 401, data: null } };
   }
 
-  return response;
+  if (!res.ok) {
+    throw {
+      response: {
+        status: res.status,
+        data: await res.json().catch(() => null),
+      },
+    };
+  }
+
+  const json = res.status === 204 ? null : await res.json();
+  return { data: json as T };
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+export const apiClient = {
+  post: <T>(path: string, data?: unknown, options?: Omit<RequestOptions, 'data'>) =>
+    request<T>('POST', path, { ...options, data }),
+  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
+};
 
-/**
- * Typed fetch helper.
- *
- * Usage:
- *   const user = await apiFetch<User>('/api/v1/auth/me');
- *   await apiFetch<void>('/api/v1/auth/logout', { method: 'POST' });
- */
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const response = await apiFetchInner(path, options);
+// Compatibility exports for existing code paths.
+export function getAccessToken(): string | null {
+  return getToken();
+}
 
-  if (!response.ok) {
-    let detail = `Request failed with status ${response.status}`;
-    try {
-      const body: { detail?: string } = await response.json();
-      if (typeof body.detail === 'string') detail = body.detail;
-    } catch {
-      // Non-JSON error body — fall back to the generic message above.
-    }
-    throw new ApiError(response.status, detail);
-  }
+export function setAccessToken(token: string | null): void {
+  setToken(token);
+}
 
-  // 204 No Content — valid success with no body.
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json() as Promise<T>;
+export function clearAccessToken(): void {
+  setToken(null);
 }

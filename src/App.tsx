@@ -9,6 +9,7 @@ import PublicRoute from './components/PublicRoute';
 import NotFoundPage from './components/NotFoundPage';
 import DashboardPage from './components/DashboardPage';
 import DashboardLayout from './components/DashboardLayout';
+import { AuthProvider } from './features/auth/AuthContext';
 
 // ── Public layout ─────────────────────────────────────────────────────────────
 const PublicLayout: React.FC = () => <Outlet />;
@@ -17,28 +18,30 @@ const PublicLayout: React.FC = () => <Outlet />;
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Public routes — redirect to /dashboard when already authenticated */}
-        <Route element={<PublicRoute />}>
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<LandingPage />} />
+      <AuthProvider>
+        <Routes>
+          {/* Public routes — redirect to /dashboard when already authenticated */}
+          <Route element={<PublicRoute />}>
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<LandingPage />} />
+            </Route>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
           </Route>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-        </Route>
 
-        {/* Protected routes — redirect to /login when unauthenticated */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/upload" element={<UploadPage />} />
-            <Route path="/results" element={<ResultsPage />} />
+          {/* Protected routes — redirect to /login when unauthenticated */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/upload" element={<UploadPage />} />
+              <Route path="/results" element={<ResultsPage />} />
+            </Route>
           </Route>
-        </Route>
 
-        {/* 404 */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+          {/* 404 */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
