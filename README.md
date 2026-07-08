@@ -65,6 +65,56 @@ throws a clear error immediately instead of failing silently later.
 
 ---
 
+---
+
+## Backend Setup
+
+### Prerequisites
+
+- **Python 3.13+** and pip
+- **PostgreSQL** running locally (or a connection string to a hosted instance)
+- **Tesseract OCR** — required by `pytesseract` for image-based document parsing:
+  `brew install tesseract` (macOS)
+
+### Getting started
+
+```bash
+# 1. Enter the backend directory
+cd backend
+
+# 2. Create and activate a virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Set up environment variables
+cp .env.example .env        # then open .env and fill in real values
+
+# 5. Run database migrations
+alembic upgrade head
+
+# 6. Start the dev server
+uvicorn app.main:app --reload    # serves at http://localhost:8000
+```
+
+### Environment Setup
+
+All backend environment variables live in `backend/.env` (copied from `.env.example`, never committed). Missing required values will cause the app to fail on startup.
+
+| Variable                       | Required | Description                                      | Example                                                    |
+| ------------------------------- | -------- | ------------------------------------------------- | ------------------------------------------------------------ |
+| `DATABASE_URL`                  | Yes      | PostgreSQL connection string.                     | `postgresql+psycopg2://user:pass@localhost:5432/healthcare` |
+| `JWT_SECRET_KEY`                | Yes      | Secret used to sign JWT access tokens.            | Generate via `openssl rand -hex 32`                          |
+| `JWT_ALGORITHM`                 | Yes      | JWT signing algorithm.                            | `HS256`                                                       |
+| `ACCESS_TOKEN_EXPIRE_MINUTES`   | Yes      | Access token lifetime, in minutes.                | `15`                                                          |
+| `GROQ_API_KEY`                  | Yes      | API key for the Groq AI engine (Llama 3.3 70B).   | From [console.groq.com](https://console.groq.com)            |
+| `SUPABASE_URL`                  | Yes      | Supabase project URL (used for Storage buckets).  | `https://xxxx.supabase.co`                                   |
+| `SUPABASE_ANON_KEY`             | Yes      | Supabase anonymous/public API key.                | From Supabase project settings                               |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Yes      | Supabase service-role key (server-side only, never exposed to the client). | From Supabase project settings          |
+
+
 ## Project structure
 
 ```
