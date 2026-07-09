@@ -61,8 +61,8 @@ export async function logoutApi(): Promise<void> {
   await apiClient.post('/api/v1/auth/logout');
 }
 
-/** GET /api/v1/users/me */
+/** GET /api/v1/auth/me */
 export async function getCurrentUserApi(): Promise<User> {
-  const res = await apiClient.get<User>('/api/v1/users/me');
+  const res = await apiClient.get<User>('/api/v1/auth/me');
   return res.data;
 }

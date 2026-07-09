@@ -3,7 +3,7 @@
  *
  * Hook overview
  * -------------
- * useCurrentUser  — query  — fetches the logged-in user's profile (/users/me).
+ * useCurrentUser  — query  — fetches the logged-in user's profile (/auth/me).
  *                            Only runs when an access token is present.
  * useLogin        — mutation — POST /auth/login; stores the token and seeds the
  *                              cache so a subsequent useCurrentUser call is free.
@@ -48,8 +48,8 @@ export function useCurrentUser() {
  * Log in with email + password.
  *
  * On success:
- *  1. Stores the returned access token in localStorage.
- *  2. Pre-populates the currentUser cache so `/users/me` doesn't need to
+ *  1. Stores the returned access token in memory.
+ *  2. Pre-populates the currentUser cache so `/auth/me` doesn't need to
  *     be fetched separately after login.
  *
  * Usage:
