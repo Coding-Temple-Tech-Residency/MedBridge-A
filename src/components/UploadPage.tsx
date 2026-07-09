@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { sampleReportText } from '../mockData';
 
 const ALLOWED_FILE_TYPES = ['pdf', 'txt', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const ANALYSIS_STEPS = [
   'Reading document structure...',
@@ -71,6 +73,7 @@ const UploadPage: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [pastedText, setPastedText] = useState('');
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
 
@@ -81,12 +84,21 @@ const UploadPage: React.FC = () => {
 
     if (!extension || !ALLOWED_FILE_TYPES.includes(extension)) {
       setFileName(null);
+      setSuccessMessage(null);
       setErrorMessage('Unsupported file type. Please upload a PDF, DOCX, TXT, JPG, or PNG file.');
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setFileName(null);
+      setSuccessMessage(null);
+      setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB} MB. Please upload a smaller file.`);
       return;
     }
 
     setFileName(file.name);
     setErrorMessage(null);
+    setSuccessMessage('File validated successfully. Ready for analysis.');
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -206,7 +218,13 @@ const UploadPage: React.FC = () => {
           <p className="mt-3 text-sm text-red-600 text-center">
             {errorMessage}
           </p>
-        )}  
+        )}
+
+        {successMessage && (
+          <p className="mt-3 text-sm text-green-700 text-center">
+            {successMessage}
+          </p>
+        )}
 
         {/* Paste text area */}
         {activeTab === 'paste' && (
