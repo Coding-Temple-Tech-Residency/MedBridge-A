@@ -1,4 +1,4 @@
-import type { AnalysisResult } from './types';
+import type { AnalysisResult, HealthTrendPoint } from './types';
 
 export const sampleReportText = `LABORATORY REPORT
 ──────────────────────────────────────────────────
@@ -238,3 +238,42 @@ export const mockAnalysisResult: AnalysisResult = {
     },
   ],
 };
+
+export const mockHealthTrendData: HealthTrendPoint[] = [
+  {
+    month: 'Jan',
+    glucose: 103,
+    ldl: 121,
+    triglycerides: 149,
+  },
+  {
+    month: 'Feb',
+    glucose: 104,
+    ldl: 123,
+    triglycerides: 146,
+  },
+  {
+    month: 'Mar',
+    glucose: 107,
+    ldl: 119,
+    triglycerides: 144,
+  },
+  {
+    month: 'Apr',
+    glucose: 109,
+    ldl: 118,
+    triglycerides: 142,
+  },
+  {
+    month: 'May',
+    glucose: 106,
+    ldl: 116,
+    triglycerides: 139,
+  },
+  {
+    month: 'Jun',
+    glucose: 108,
+    ldl: 118,
+    triglycerides: 140,
+  },
+];

@@ -1,38 +1,23 @@
 import { useNavigate } from 'react-router-dom';
+import { mockAnalysisResult, mockHealthTrendData } from '../mockData';
 import Card from './UI/Card';
 import Button from './UI/Button';
-
-type PlaceholderFeature = {
-  title: string;
-  description: string;
-  badge: 'Available' | 'Coming Soon';
-};
-
-const placeholderFeatures: PlaceholderFeature[] = [
-  {
-    title: 'Recent Analyses',
-    description: 'Quickly revisit your latest AI document summaries.',
-    badge: 'Coming Soon',
-  },
-  {
-    title: 'Health Trend Timeline',
-    description: 'Track meaningful health changes over time in one place.',
-    badge: 'Coming Soon',
-  },
-  {
-    title: 'Care Reminders',
-    description: 'Get reminders for follow-ups, tests, and key appointments.',
-    badge: 'Coming Soon',
-  },
-  {
-    title: 'Provider Sharing',
-    description: 'Securely share selected summaries with your care team.',
-    badge: 'Coming Soon',
-  },
-];
+import HealthCategoryRadarChart from './dashboard/HealthCategoryRadarChart';
+import HealthMetricCard from './dashboard/HealthMetricCard';
+import HealthTrendChart from './dashboard/HealthTrendChart';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const result = mockAnalysisResult;
+
+  const metricsForCards = result.metrics.slice(0, 6);
+  const normalMetricCount = result.metrics.filter((metric) => metric.status === 'normal').length;
+  const elevatedMetricCount = result.metrics.filter((metric) => metric.status === 'elevated').length;
+  const lowMetricCount = result.metrics.filter((metric) => metric.status === 'low').length;
+  const averageCategoryScore = Math.round(
+    result.healthCategories.reduce((sum, category) => sum + category.score, 0) /
+      result.healthCategories.length,
+  );
 
   return (
     <div className="space-y-6">
@@ -40,67 +25,89 @@ const DashboardPage: React.FC = () => {
         <p className="mb-2 inline-block rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide">
           Dashboard
         </p>
-        <h1 className="text-3xl font-bold sm:text-4xl">Welcome to your health workspace</h1>
+        <h1 className="text-3xl font-bold sm:text-4xl">Health dashboard overview</h1>
         <p className="mt-3 max-w-2xl text-white/85">
-          Use the dashboard to upload reports, review results, and track future features as they
-          roll out.
+          Reusable cards and chart modules are now wired to mock health data, making this layout
+          ready for backend-driven metrics.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button onClick={() => navigate('/upload')} className="bg-[#D4A843] text-[#1E3A2F] hover:bg-[#c49630]">
+          <Button
+            onClick={() => navigate('/upload')}
+            className="bg-[#D4A843] text-[#1E3A2F] hover:bg-[#c49630]"
+          >
             Upload New Document
           </Button>
-          <Button variant="outline" onClick={() => navigate('/results')} className="border-white/60 text-white hover:bg-white/10">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/results')}
+            className="border-white/60 text-white hover:bg-white/10"
+          >
             View Latest Results
           </Button>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-[#8FD4A8]/50">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#2E7D55]">Available</p>
-              <h2 className="mt-1 text-xl font-bold text-[#1E3A2F]">Document Upload</h2>
-              <p className="mt-2 text-sm text-gray-500">
-                Start a new AI analysis by uploading a report or pasting content.
-              </p>
-            </div>
-            <span className="rounded-full bg-[#E5F2EA] px-2.5 py-1 text-xs font-semibold text-[#1E3A2F]">
-              Live
-            </span>
-          </div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#2E7D55]">Overall Status</p>
+          <p className="mt-2 text-3xl font-bold text-[#1E3A2F]">{result.overallStatus}</p>
+          <p className="mt-1 text-sm text-gray-500">Based on the latest uploaded report.</p>
         </Card>
 
         <Card className="border-[#8FD4A8]/50">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#2E7D55]">Available</p>
-              <h2 className="mt-1 text-xl font-bold text-[#1E3A2F]">Results Review</h2>
-              <p className="mt-2 text-sm text-gray-500">
-                Explore explanations, metrics, and recommended next steps.
-              </p>
-            </div>
-            <span className="rounded-full bg-[#E5F2EA] px-2.5 py-1 text-xs font-semibold text-[#1E3A2F]">
-              Live
-            </span>
-          </div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#2E7D55]">Metric Mix</p>
+          <p className="mt-2 text-3xl font-bold text-[#1E3A2F]">
+            {normalMetricCount} <span className="text-base font-medium text-gray-400">normal</span>
+          </p>
+          <p className="mt-1 text-sm text-gray-500">
+            {elevatedMetricCount} elevated, {lowMetricCount} low.
+          </p>
         </Card>
 
-        {placeholderFeatures.map((feature) => (
-          <Card key={feature.title} className="border-dashed border-gray-200">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Roadmap</p>
-                <h2 className="mt-1 text-xl font-bold text-[#1E3A2F]">{feature.title}</h2>
-                <p className="mt-2 text-sm text-gray-500">{feature.description}</p>
-              </div>
-              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
-                {feature.badge}
-              </span>
-            </div>
-          </Card>
-        ))}
+        <Card className="border-[#8FD4A8]/50">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#2E7D55]">
+            Category Average
+          </p>
+          <p className="mt-2 text-3xl font-bold text-[#1E3A2F]">{averageCategoryScore}/100</p>
+          <p className="mt-1 text-sm text-gray-500">Computed across core health categories.</p>
+        </Card>
+
+        <Card className="border-[#8FD4A8]/50">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#2E7D55]">Data Source</p>
+          <p className="mt-2 text-3xl font-bold text-[#1E3A2F]">Mock</p>
+          <p className="mt-1 text-sm text-gray-500">Ready to swap with backend dashboard endpoints.</p>
+        </Card>
+      </section>
+
+      <section>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-bold text-[#1E3A2F]">Health Metric Cards</h2>
+            <p className="text-sm text-gray-500">
+              Reusable metric cards to display backend health values consistently.
+            </p>
+          </div>
+          <Button variant="ghost" onClick={() => navigate('/results')} className="text-[#1E3A2F]">
+            See Full Analysis
+          </Button>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {metricsForCards.map((metric) => (
+            <HealthMetricCard key={metric.name} metric={metric} />
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-bold text-[#1E3A2F]">Dashboard Charts</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Placeholder Recharts components wired to mock data models.
+        </p>
+        <div className="mt-4 grid gap-4 xl:grid-cols-2">
+          <HealthCategoryRadarChart data={result.healthCategories} />
+          <HealthTrendChart data={mockHealthTrendData} />
+        </div>
       </section>
     </div>
   );

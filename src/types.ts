@@ -29,6 +29,13 @@ export interface HealthCategory {
   fullMark: number;
 }
 
+export interface HealthTrendPoint {
+  month: string;
+  glucose: number;
+  ldl: number;
+  triglycerides: number;
+}
+
 export interface ActionableStep {
   priority: Priority;
   title: string;
