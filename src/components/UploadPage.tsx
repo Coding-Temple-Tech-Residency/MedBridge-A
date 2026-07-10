@@ -79,13 +79,19 @@ const UploadPage: React.FC = () => {
 
   const hasContent = fileName !== null || pastedText.trim().length > 0;
 
+  const handleTabChange = (tab: 'upload' | 'paste') => {
+    setActiveTab(tab);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+
   const validateFile = (file: File) => {
     const extension = file.name.split('.').pop()?.toLowerCase();
 
     if (!extension || !ALLOWED_FILE_TYPES.includes(extension)) {
       setFileName(null);
       setSuccessMessage(null);
-      setErrorMessage('Unsupported file type. Please upload a PDF, DOCX, TXT, JPG, or PNG file.');
+      setErrorMessage('Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',);
       return;
     }
 
@@ -122,7 +128,7 @@ const UploadPage: React.FC = () => {
 
   const handleTrySample = () => {
     setPastedText(sampleReportText);
-    setActiveTab('paste');
+    handleTabChange('paste');
   };
 
   const handleAnalyse = () => {
@@ -149,7 +155,7 @@ const UploadPage: React.FC = () => {
         {/* Tab switcher */}
         <div className="flex bg-white rounded-xl border border-gray-200 p-1 mb-5 shadow-sm">
           <button
-            onClick={() => setActiveTab('upload')}
+            onClick={() => handleTabChange('upload')}
             className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
               activeTab === 'upload'
                 ? 'bg-[#1E3A2F] text-white shadow-sm'
@@ -159,7 +165,7 @@ const UploadPage: React.FC = () => {
             📁 Upload File
           </button>
           <button
-            onClick={() => setActiveTab('paste')}
+            onClick={() => handleTabChange('paste')}
             className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
               activeTab === 'paste'
                 ? 'bg-[#1E3A2F] text-white shadow-sm'
@@ -208,7 +214,7 @@ const UploadPage: React.FC = () => {
                   {isDragging ? 'Drop it here!' : 'Drop your file here'}
                 </p>
                 <p className="text-gray-400 mt-1">or click to browse</p>
-                <p className="text-xs text-gray-300 mt-4">Supports: PDF, DOCX, TXT, JPG, PNG</p>
+                <p className="text-xs text-gray-300 mt-4"> Supports: PDF, DOC, DOCX, TXT, JPG, JPEG, PNG </p>
               </div>
             )}
           </div>
