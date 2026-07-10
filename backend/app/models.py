@@ -177,3 +177,13 @@ class UsageEvent(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
     user = relationship("User", back_populates="usage_events")
+
+class Patient(Base):
+    __tablename__ = "patients"
+
+    id = Column(Integer, primary_key=True, index=True)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    weight = Column(Float, nullable=False)
+    date_of_birth = Column(Date, nullable=False)
+    insured = Column(Boolean, nullable=False)
