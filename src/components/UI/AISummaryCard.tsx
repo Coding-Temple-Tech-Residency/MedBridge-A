@@ -1,7 +1,9 @@
 import type { AISummaryPayload } from '../../types';
 
 type AISummaryCardProps = {
-  payload: AISummaryPayload;
+  payload?: AISummaryPayload | null;
+  isLoading?: boolean;
+  errorMessage?: string | null;
   className?: string;
 };
 
@@ -23,8 +25,14 @@ function normaliseSummary(payload: AISummaryPayload) {
   };
 }
 
-const AISummaryCard: React.FC<AISummaryCardProps> = ({ payload, className = '' }) => {
-  const { summary, keyPoints, recommendations, generatedAt } = normaliseSummary(payload);
+const AISummaryCard: React.FC<AISummaryCardProps> = ({
+  payload,
+  isLoading = false,
+  errorMessage = null,
+  className = '',
+}) => {
+  const safePayload = payload ?? {};
+  const { summary, keyPoints, recommendations, generatedAt } = normaliseSummary(safePayload);
   const hasSummary = summary.length > 0;
 
   return (
@@ -40,18 +48,43 @@ const AISummaryCard: React.FC<AISummaryCardProps> = ({ payload, className = '' }
               <p className="text-xs text-gray-500">Plain-language overview of your document</p>
             </div>
           </div>
-          {generatedAt && <span className="text-xs text-gray-400 whitespace-nowrap">{generatedAt}</span>}
+          {!isLoading && !errorMessage && generatedAt && (
+            <span className="text-xs text-gray-400 whitespace-nowrap">{generatedAt}</span>
+          )}
         </div>
       </div>
 
       <div className="p-6 space-y-5">
+        {isLoading && (
+          <div className="rounded-xl border border-[#8FD4A8] bg-[#F2F7F4] p-4">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex h-5 w-5 animate-spin rounded-full border-2 border-[#8FD4A8] border-t-[#2E7D55]" />
+              <div className="space-y-2 w-full">
+                <p className="text-sm font-medium text-[#1E3A2F]">Generating summary...</p>
+                <div className="h-2.5 w-full rounded bg-[#DDECE4] animate-pulse" />
+                <div className="h-2.5 w-4/5 rounded bg-[#DDECE4] animate-pulse" />
+                <div className="h-2.5 w-2/3 rounded bg-[#DDECE4] animate-pulse" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && errorMessage && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+            <p className="text-sm font-semibold text-red-700">Unable to load AI summary.</p>
+            <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
+          </div>
+        )}
+
+        {!isLoading && !errorMessage && (
         <p className="text-gray-600 leading-relaxed">
           {hasSummary
             ? summary
             : 'Summary not available yet. Upload a document to generate an AI summary.'}
         </p>
+        )}
 
-        {keyPoints.length > 0 && (
+        {!isLoading && !errorMessage && keyPoints.length > 0 && (
           <div>
             <h4 className="text-sm font-semibold text-[#1E3A2F] mb-2">Key points</h4>
             <ul className="space-y-2">
@@ -67,7 +100,7 @@ const AISummaryCard: React.FC<AISummaryCardProps> = ({ payload, className = '' }
           </div>
         )}
 
-        {recommendations.length > 0 && (
+        {!isLoading && !errorMessage && recommendations.length > 0 && (
           <div>
             <h4 className="text-sm font-semibold text-[#1E3A2F] mb-2">Suggested next steps</h4>
             <ul className="space-y-2">

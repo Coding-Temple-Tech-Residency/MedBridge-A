@@ -12,6 +12,12 @@ import { mockAnalysisResult } from '../mockData';
 import type { HealthMetric, ActionableStep, AISummaryPayload } from '../types';
 import AISummaryCard from './UI/AISummaryCard';
 
+type ResultsNavigationState = {
+  aiSummaryResponse?: AISummaryPayload;
+  aiSummaryLoading?: boolean;
+  aiSummaryError?: string;
+};
+
 // ── Metric range bar ─────────────────────────────────────────────────────────
 const MetricRangeBar: React.FC<{ metric: HealthMetric }> = ({ metric }) => {
   const buffer = (metric.normalMax - metric.normalMin) * 0.45;
@@ -68,9 +74,12 @@ const ResultsPage: React.FC = () => {
   const location = useLocation();
   const onNewDocument = () => navigate('/upload');
   const result = mockAnalysisResult;
-  const backendSummaryPayload = (location.state as { aiSummaryResponse?: AISummaryPayload } | null)
-    ?.aiSummaryResponse;
-  const summaryPayload = backendSummaryPayload ?? result.aiSummary;
+  const state = location.state as ResultsNavigationState | null;
+  const backendSummaryPayload = state?.aiSummaryResponse;
+  const isSummaryLoading = state?.aiSummaryLoading ?? false;
+  const summaryError = state?.aiSummaryError ?? null;
+  const summaryPayload =
+    backendSummaryPayload ?? (isSummaryLoading || summaryError ? null : result.aiSummary);
 
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -153,7 +162,12 @@ const ResultsPage: React.FC = () => {
           </p>
 
           {/* Reusable AI summary */}
-          <AISummaryCard payload={summaryPayload} className="mb-5" />
+          <AISummaryCard
+            payload={summaryPayload}
+            isLoading={isSummaryLoading}
+            errorMessage={summaryError}
+            className="mb-5"
+          />
 
           {/* Per-finding cards */}
           <div className="space-y-4">
