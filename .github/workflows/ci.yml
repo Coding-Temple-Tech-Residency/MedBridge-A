@@ -47,6 +47,16 @@ jobs:
         run: |
           python -c "import app.main; print('app.main imported OK')"
 
+      - name: Run tests
+        env:
+          DATABASE_URL: "sqlite:///./ci_test.db"
+          JWT_SECRET_KEY: "ci-not-a-real-secret"
+          JWT_ALGORITHM: "HS256"
+          ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+          GROQ_API_KEY: "ci-dummy-key-not-real"
+        run: |
+          pytest -v
+
       - name: Lint (ruff)
         run: |
           pip install ruff
