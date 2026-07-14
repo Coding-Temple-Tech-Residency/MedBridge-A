@@ -47,6 +47,22 @@ export const mockAnalysisResult: AnalysisResult = {
   overallMessage:
     'Your results are mostly within normal ranges. One marker — fasting glucose — is slightly elevated and worth monitoring.',
 
+  aiSummary: {
+    summary:
+      "We reviewed your Complete Blood Count and Metabolic Panel. Most results are in healthy ranges. The only value to monitor is fasting glucose at 108 mg/dL, which is slightly above the normal fasting range and can often improve with small lifestyle changes.",
+    key_points: [
+      'Most blood cell, kidney, and electrolyte markers are within normal ranges.',
+      'Fasting glucose is mildly elevated at 108 mg/dL.',
+      'Cholesterol panel remains in a generally healthy range.',
+    ],
+    recommendations: [
+      'Follow up with your clinician about fasting glucose in the next 2-4 weeks.',
+      'Reduce added sugars and refined carbohydrates in daily meals.',
+      'Aim for at least 30 minutes of light to moderate activity most days.',
+    ],
+    generated_at: 'Generated Jul 9, 2026',
+  },
+
   explanation: {
     summary:
       "We reviewed your Complete Blood Count and Metabolic Panel. The great news: the vast majority of your results are normal. Your blood cells are healthy, your kidneys are functioning well, and your electrolytes are balanced. The one area to keep an eye on is your blood sugar (glucose), which came in slightly above the normal fasting range — a common early finding that's very manageable with simple lifestyle adjustments.",
