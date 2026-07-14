@@ -41,6 +41,8 @@ const formatValue = (value: number) => {
   return value.toFixed(1);
 };
 
+const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
+
 const HealthMetricCard: React.FC<HealthMetricCardProps> = ({ metric }) => {
   const styles = statusStyles[metric.status];
 
@@ -51,7 +53,7 @@ const HealthMetricCard: React.FC<HealthMetricCardProps> = ({ metric }) => {
 
   const normalStartPct = ((metric.normalMin - displayMin) / totalRange) * 100;
   const normalWidthPct = ((metric.normalMax - metric.normalMin) / totalRange) * 100;
-  const valuePct = Math.max(1, Math.min(99, ((metric.value - displayMin) / totalRange) * 100));
+  const valuePct = totalRange > 0 ? clampPercent(((metric.value - displayMin) / totalRange) * 100) : 0;
 
   return (
     <Card
