@@ -3,7 +3,6 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.security import (
-    hash_password,
     verify_password,
     create_access_token,
 )

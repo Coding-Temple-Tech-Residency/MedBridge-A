@@ -60,4 +60,4 @@ jobs:
       - name: Lint (ruff)
         run: |
           pip install ruff
-          ruff check . || true
+          ruff check .

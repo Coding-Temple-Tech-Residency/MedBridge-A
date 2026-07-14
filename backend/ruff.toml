@@ -1,0 +1,3 @@
+# Exclude throwaway manual scripts from linting — they intentionally break
+# some rules (e.g. load_dotenv before imports) and aren't application code.
+extend-exclude = ["scripts"]
