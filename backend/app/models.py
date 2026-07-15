@@ -86,6 +86,7 @@ class Document(Base):
 
     user = relationship("User", back_populates="documents")
     lab_results = relationship("LabResult", back_populates="document")
+    conversations = relationship("Conversation", back_populates="document")
 
 
 # ---------------------------------------------------------------------------
@@ -121,9 +122,11 @@ class Conversation(Base):
 
     title = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False, index=True)
 
     user = relationship("User", back_populates="conversations")
     messages = relationship("Message", back_populates="conversation")
+    document = relationship("Document", back_populates="conversations")
 
 
 # ---------------------------------------------------------------------------
