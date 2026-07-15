@@ -6,7 +6,7 @@ This is the guide to talking to the backend. Whether you're on the frontend wiri
 
 ## How the API is shaped
 
-The whole thing follows one idea: the URL names a *thing*, and the HTTP method says what you're doing to it. So there's no `/getUser` or `/createDocument` floating around — just `/users` and `/documents`, where GET reads, POST creates, PATCH updates, and DELETE removes. Learn one resource and you can pretty much guess the rest.
+The whole thing follows one idea: the URL names a _thing_, and the HTTP method says what you're doing to it. So there's no `/getUser` or `/createDocument` floating around — just `/users` and `/documents`, where GET reads, POST creates, PATCH updates, and DELETE removes. Learn one resource and you can pretty much guess the rest.
 
 A few house rules on top of that:
 
@@ -40,20 +40,20 @@ Why a cookie instead of just handing you the token? An httpOnly cookie can't be 
 
 ## The routes at a glance
 
-| Method | Route | What it does | Needs auth? | Scope |
-|---|---|---|---|---|
-| GET | `/health` | Quick "is the DB up?" check | no | done |
-| POST | `/auth/register` | Make a new account | no | Sprint 1 |
-| POST | `/auth/login` | Log in, get your tokens | no | Sprint 1 |
-| POST | `/auth/refresh` | Trade the refresh cookie for a new access token | refresh cookie | Sprint 1 |
-| POST | `/auth/logout` | End the current session | access token | Sprint 1 |
-| GET | `/users/me` | "Who am I?" — the current user's profile | access token | Sprint 1 |
-| GET / POST | `/documents` | List your documents / upload a new one | access token | Planned |
-| GET / DELETE | `/documents/{id}` | Grab one / delete one | access token | Planned |
-| POST | `/documents/{id}/summarize` | Kick off the AI summary | access token | Planned |
-| GET | `/lab-results` | List lab results (this feeds the dashboard) | access token | Planned |
-| GET / POST | `/conversations` | List threads / start a new one | access token | Planned |
-| GET / POST | `/conversations/{id}/messages` | Read a thread / ask a question | access token | Planned |
+| Method       | Route                          | What it does                                    | Needs auth?    | Scope    |
+| ------------ | ------------------------------ | ----------------------------------------------- | -------------- | -------- |
+| GET          | `/health`                      | Quick "is the DB up?" check                     | no             | done     |
+| POST         | `/auth/register`               | Make a new account                              | no             | Sprint 1 |
+| POST         | `/auth/login`                  | Log in, get your tokens                         | no             | Sprint 1 |
+| POST         | `/auth/refresh`                | Trade the refresh cookie for a new access token | refresh cookie | Sprint 1 |
+| POST         | `/auth/logout`                 | End the current session                         | access token   | Sprint 1 |
+| GET          | `/users/me`                    | "Who am I?" — the current user's profile        | access token   | Sprint 1 |
+| GET / POST   | `/documents`                   | List your documents / upload a new one          | access token   | Planned  |
+| GET / DELETE | `/documents/{id}`              | Grab one / delete one                           | access token   | Planned  |
+| POST         | `/documents/{id}/summarize`    | Kick off the AI summary                         | access token   | Planned  |
+| GET          | `/lab-results`                 | List lab results (this feeds the dashboard)     | access token   | Planned  |
+| GET / POST   | `/conversations`               | List threads / start a new one                  | access token   | Planned  |
+| GET / POST   | `/conversations/{id}/messages` | Read a thread / ask a question                  | access token   | Planned  |
 
 ---
 
@@ -171,17 +171,17 @@ Errors come back in a consistent little shape, so you can handle them the same w
 
 And the status codes you'll actually run into:
 
-| Code | What it means |
-|---|---|
-| 200 | All good |
-| 201 | Created something new |
-| 204 | Worked, nothing to send back |
-| 400 | The request was malformed |
-| 401 | You're not logged in (or your token's bad) |
-| 403 | You're logged in, but not allowed to do this |
-| 404 | Couldn't find it |
-| 409 | Clashes with something that already exists (e.g. duplicate email) |
-| 422 | The data didn't validate |
+| Code | What it means                                                     |
+| ---- | ----------------------------------------------------------------- |
+| 200  | All good                                                          |
+| 201  | Created something new                                             |
+| 204  | Worked, nothing to send back                                      |
+| 400  | The request was malformed                                         |
+| 401  | You're not logged in (or your token's bad)                        |
+| 403  | You're logged in, but not allowed to do this                      |
+| 404  | Couldn't find it                                                  |
+| 409  | Clashes with something that already exists (e.g. duplicate email) |
+| 422  | The data didn't validate                                          |
 
 ## The live version
 

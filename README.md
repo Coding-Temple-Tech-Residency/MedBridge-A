@@ -1,19 +1,19 @@
-# MedBridge-A — Frontend
+# MedBridge-A
 
-AI-Powered Patient Health Companion. This repository holds the **frontend** web
-app: patients upload or paste a medical document and receive a plain-language
+AI-Powered Patient Health Companion. This repository holds the MedBridge web
+app, where patients upload or paste a medical document and receive a plain-language
 summary, a health dashboard, and actionable next steps.
 
-**Tech stack:** React 18 · TypeScript · Vite · Tailwind CSS · Recharts
+**Tech stack:** React 18 · TypeScript · Vite · Tailwind CSS · Python · Recharts
 
 ---
 
 ## Project Information
 
 - **Project Name:** MedBridge-A
-- **Team Name:** _(fill in)_
-- **Cohort / Sprint:** Sprint 1 — Foundation & Infrastructure
-- **Team Members:** _(fill in)_
+- **Team Name:** _MedBridgeA_
+- **Cohort / Sprint:** Sprint 2 — AI Development
+- **Team Members:** Benny Bailey, Jake Mikiewicz, Shaney Hoyohoy, Zari Magnaye, Aramide Bhadmus, Warren Seals, Edward Quach
 
 ---
 
