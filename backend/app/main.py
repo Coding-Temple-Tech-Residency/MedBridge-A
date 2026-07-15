@@ -27,7 +27,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/v1/auth")
 app.include_router(patients_router, prefix="/api/v1")
 app.include_router(documents_router, prefix="/api/v1")
-
+app.include_router(ai_router, prefix="/api/v1")
 @app.get("/")
 def root():
     return {"message": "OK"}
