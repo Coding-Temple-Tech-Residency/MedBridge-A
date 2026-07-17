@@ -8,9 +8,11 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/features/auth/AuthContext';
 import { mockAnalysisResult } from '../mockData';
 import type { HealthMetric, ActionableStep, AISummaryPayload } from '../types';
 import AISummaryCard from './UI/AISummaryCard';
+import PublicHeader from './PublicHeader';
 
 type ResultsNavigationState = {
   aiSummaryResponse?: AISummaryPayload;
@@ -72,6 +74,7 @@ const PriorityBadge: React.FC<{ priority: ActionableStep['priority'] }> = ({ pri
 const ResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const onNewDocument = () => navigate('/upload');
   const result = mockAnalysisResult;
   const state = location.state as ResultsNavigationState | null;
@@ -110,6 +113,8 @@ const ResultsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F2F7F4] pb-20">
+      <PublicHeader activeSection="results" />
+
       {/* ── Summary banner ── */}
       <div className={`${statusBanner.bar} border-b py-5 px-6`}>
         <div className="max-w-3xl mx-auto flex items-start gap-4">
@@ -151,6 +156,13 @@ const ResultsPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {!isAuthenticated && (
+        <div className="mx-auto mt-4 max-w-3xl rounded-xl border border-[#8FD4A8] bg-[#E5F2EA] px-4 py-3 text-sm text-[#1E3A2F]">
+          Guest mode is active. You can review results and chat with AI now. Create an account to
+          save progress across visits.
+        </div>
+      )}
 
       {/* ── Content ── */}
       <div className="max-w-3xl mx-auto px-6 pt-10 space-y-14">

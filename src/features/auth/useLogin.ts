@@ -20,7 +20,7 @@ export function useLogin() {
     onMutate: () => setFormError(null),
     onSuccess: (data) => {
       setAccessToken(data.access_token); // in-memory; refresh token rides in HttpOnly cookie
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     },
     onError: (err: unknown) => {
       // Never reveal which field was wrong

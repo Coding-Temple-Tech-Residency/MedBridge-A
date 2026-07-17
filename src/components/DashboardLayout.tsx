@@ -19,7 +19,7 @@ const DashboardLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F2F7F4]">
       <header className="sticky top-0 z-30 border-b border-[#8FD4A8]/30 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <button
             onClick={() => navigate('/dashboard')}
             className="flex items-center gap-2.5 hover:opacity-85 transition-opacity"
@@ -31,6 +31,42 @@ const DashboardLayout: React.FC = () => {
               <span className="text-[#D4A843]">A</span>
             </span>
           </button>
+
+          <nav className="hidden items-center gap-2 lg:flex">
+            <button
+              onClick={() => navigate('/upload')}
+              className="rounded-lg border border-[#8FD4A8] bg-[#F2F7F4] px-3 py-2 text-sm font-semibold text-[#1E3A2F] transition-colors hover:bg-[#E5F2EA]"
+            >
+              Upload
+            </button>
+            <button
+              onClick={() => navigate('/chat')}
+              className="rounded-lg border border-[#8FD4A8] bg-[#F2F7F4] px-3 py-2 text-sm font-semibold text-[#1E3A2F] transition-colors hover:bg-[#E5F2EA]"
+            >
+              Chat
+            </button>
+            <button
+              onClick={() => navigate('/results')}
+              className="rounded-lg border border-[#8FD4A8] bg-[#F2F7F4] px-3 py-2 text-sm font-semibold text-[#1E3A2F] transition-colors hover:bg-[#E5F2EA]"
+            >
+              Results
+            </button>
+          </nav>
+
+          <div className="hidden items-center gap-2 lg:flex">
+            <button
+              onClick={() => navigate('/profile')}
+              className="rounded-xl bg-[#1E3A2F] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2E7D55]"
+            >
+              Profile
+            </button>
+            <button
+              onClick={handleLogout}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              Sign Out
+            </button>
+          </div>
 
           <button
             onClick={() => setMenuOpen((open) => !open)}
