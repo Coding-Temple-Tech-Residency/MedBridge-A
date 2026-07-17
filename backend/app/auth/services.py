@@ -56,8 +56,7 @@ class AuthService:
 
         AuditService.log_event(db, "login.success", user_id=user.id)
 
-
-        return access, refresh
+        return access, refresh, user
 
     # ==========================
     # REFRESH (WITH ROTATION)

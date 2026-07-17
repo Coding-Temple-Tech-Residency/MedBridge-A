@@ -1,9 +1,20 @@
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user
 from app import models
+
+from app.ai.tasks import trigger_summarize
 
 from .schemas import DocumentUploadResponse
 from .services import DocumentService
@@ -17,6 +28,7 @@ router = APIRouter(tags=["documents"])
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user_id: str = Form(...),
     db: Session = Depends(get_db),
@@ -45,9 +57,16 @@ async def upload_document(
 
     content = await file.read()
 
-    return DocumentService.upload(
+    result = DocumentService.upload(
         db,
         file=file,
         content=content,
         user_id=current_user.id,
     )
+
+    # Criterion #50 — auto-summarize in the background. The 201 goes out
+    # immediately; the AI work happens after the response is sent. Failures
+    # are logged inside the task and never affect this response (#51).
+    background_tasks.add_task(trigger_summarize, result["document_id"])
+
+    return result

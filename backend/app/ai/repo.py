@@ -67,3 +67,20 @@ def insert_assistant_message(db: Session, conversation_id: int, content: str):
     db.commit()
     db.refresh(msg)
     return msg
+
+
+# ---------------------------------------------------------------------------
+# Document / summary helpers (AI-208)
+# ---------------------------------------------------------------------------
+def get_document(db: Session, document_id: int):
+    from app.models import Document
+
+    return db.query(Document).filter(Document.id == document_id).first()
+
+
+def save_summary(db: Session, document, summary_text: str):
+    document.ai_summary = summary_text
+    document.status = "summarized"
+    db.commit()
+    db.refresh(document)
+    return document

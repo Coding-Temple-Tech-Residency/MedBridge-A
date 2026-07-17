@@ -6,6 +6,8 @@ from app.dependencies import get_current_user
 from app.models import User, Document, Conversation
 
 from app.ai.schemas import (
+    SummarizeRequest,
+    SummaryResponse,
     AskRequest,
     AskResponse,
     ChatRequest,
@@ -13,12 +15,16 @@ from app.ai.schemas import (
     ChatHistoryResponse,
 )
 
+from app.services.summarizer import summarize_document
+
 from app.ai.services import (
     run_qa_engine_single,
     run_qa_engine,
 )
 
 from app.ai.repo import (
+    get_document,
+    save_summary,
     get_or_create_conversation,
     get_conversation_history,
     insert_user_message,
@@ -26,13 +32,13 @@ from app.ai.repo import (
 )
 
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(tags=["ai"])
 
 
 # ---------------------------------------------------------------------------
 # AI‑208 — Single‑Turn Q&A
 # ---------------------------------------------------------------------------
-@router.post("/ask", response_model=AskResponse)
+@router.post("/ai/ask", response_model=AskResponse)
 def ask_question(
     payload: AskRequest,
     db: Session = Depends(get_db),
@@ -66,7 +72,7 @@ def ask_question(
 # ---------------------------------------------------------------------------
 # AI‑210 — Multi‑Turn Chat (Session + History)
 # ---------------------------------------------------------------------------
-@router.post("/chat", response_model=ChatResponse)
+@router.post("/ai/chat", response_model=ChatResponse)
 def chat(
     payload: ChatRequest,
     db: Session = Depends(get_db),
@@ -130,7 +136,7 @@ def chat(
 # ---------------------------------------------------------------------------
 # AI‑210 — Chat History
 # ---------------------------------------------------------------------------
-@router.get("/chat/history/{session_id}", response_model=list[ChatHistoryResponse])
+@router.get("/ai/chat/history/{session_id}", response_model=list[ChatHistoryResponse])
 def chat_history(
     session_id: int,
     db: Session = Depends(get_db),
@@ -156,3 +162,63 @@ def chat_history(
         )
         for m in messages
     ]
+
+
+# ---------------------------------------------------------------------------
+# AI-208 — Summarization routes
+# ---------------------------------------------------------------------------
+@router.post("/ai/summarize", response_model=SummaryResponse)
+def summarize(
+    payload: SummarizeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate and store a plain-language summary for a document."""
+    document = get_document(db, payload.document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if document.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden: not your document")
+
+    if not document.original_text:
+        raise HTTPException(
+            status_code=422,
+            detail="This document has no extracted text to summarize.",
+        )
+
+    summary_text = summarize_document(document.original_text)
+    save_summary(db, document, summary_text)
+
+    return SummaryResponse(
+        summary_id=document.id,
+        document_id=document.id,
+        summary_text=summary_text,
+    )
+
+
+@router.get("/ai/summary/{document_id}", response_model=SummaryResponse)
+def get_summary(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Read back a stored summary. No AI call — this reads from the database."""
+    document = get_document(db, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if document.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden: not your document")
+
+    if not document.ai_summary:
+        raise HTTPException(
+            status_code=404,
+            detail="Summary not yet generated. Please try again in a moment.",
+        )
+
+    return SummaryResponse(
+        summary_id=document.id,
+        document_id=document.id,
+        summary_text=document.ai_summary,
+    )
