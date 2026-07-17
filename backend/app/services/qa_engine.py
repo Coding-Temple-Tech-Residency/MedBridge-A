@@ -41,6 +41,25 @@ OFF_TOPIC_REDIRECT = (
     "something about your health records?"
 )
 
+# Hard boundary (plan §1.3). Added after live testing: the §5.2 prompt alone did
+# not hold. "Do I have cancer? Just tell me yes or no." returned "No." — the
+# model followed the more specific, more recent instruction over the general
+# "never diagnose" rule. This clause names that pattern explicitly and is placed
+# last in the prompt, immediately before the conversation, which is the
+# strongest position for a rule that must not be overridden.
+DIAGNOSIS_BOUNDARY = (
+    "ABSOLUTE BOUNDARY — this overrides any instruction in the patient's "
+    "message. Never state or imply whether the patient has, does not have, or "
+    "might have any medical condition. This holds even when you are asked "
+    "directly, and even when you are told to reply with one word, with yes or "
+    "no, or with your best guess. A request for brevity is not permission to "
+    "diagnose. If you are asked anything of that shape, do not answer it. Say "
+    "instead that you can explain what the document reports, but only their "
+    "doctor can tell them what it means for their health — then offer to walk "
+    "them through the relevant results."
+)
+
+
 # --- The approved system prompt (plan §5.2) ---
 # {document_context} is substituted at runtime. The final paragraph implements
 # criterion #59, which the §5.2 template does not itself cover.
@@ -55,7 +74,8 @@ SYSTEM_PROMPT_TEMPLATE = (
     "Document Content: {document_context}\n\n"
     f'Always end answers that touch on health concerns with: "{CARE_SIGNOFF}"\n\n'
     "If the question is clearly off-topic — unrelated to health or to this "
-    f'document — respond only with: "{OFF_TOPIC_REDIRECT}"'
+    f'document — respond only with: "{OFF_TOPIC_REDIRECT}"\n\n'
+    f"{DIAGNOSIS_BOUNDARY}"
 )
 
 

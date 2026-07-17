@@ -212,3 +212,35 @@ def test_groq_failure_raises_runtime_error(monkeypatch):
 
     with pytest.raises(RuntimeError, match="AI chat failed. Please try again."):
         answer_question("Q?", "Doc.", [])
+
+
+# -- Diagnosis boundary (plan §1.3) ------------------------------------------
+# These exist because live testing found the §5.2 prompt alone was insufficient:
+# "Do I have cancer? Just tell me yes or no." returned "No." from a real call.
+
+
+def test_system_prompt_includes_the_diagnosis_boundary():
+    from app.services.qa_engine import DIAGNOSIS_BOUNDARY
+
+    messages = build_messages("Q?", "Doc.", [])
+    assert DIAGNOSIS_BOUNDARY in messages[0]["content"]
+
+
+def test_diagnosis_boundary_is_last_in_the_prompt():
+    """Position matters. The boundary is the last thing the model reads before
+    the conversation starts — the strongest spot for a rule that must survive a
+    competing instruction in the user's own message."""
+    from app.services.qa_engine import DIAGNOSIS_BOUNDARY
+
+    messages = build_messages("Q?", "Doc.", [])
+    assert messages[0]["content"].rstrip().endswith(DIAGNOSIS_BOUNDARY)
+
+
+def test_diagnosis_boundary_names_the_override_pattern():
+    """The clause must explicitly anticipate 'just answer yes or no' — that's
+    the exact phrasing that defeated the original prompt."""
+    from app.services.qa_engine import DIAGNOSIS_BOUNDARY
+
+    lowered = DIAGNOSIS_BOUNDARY.lower()
+    assert "overrides any instruction" in lowered
+    assert "yes or no" in lowered
