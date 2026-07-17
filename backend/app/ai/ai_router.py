@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models import User, Document, Conversation, Message
+from app.models import User, Document, Conversation
 
 from app.ai.schemas import (
     AskRequest,
@@ -96,7 +95,7 @@ def chat(
     history = get_conversation_history(db=db, conversation_id=conversation.id)
 
     # 5. Insert user message BEFORE calling AI
-    user_msg = insert_user_message(
+    insert_user_message(
         db=db,
         conversation_id=conversation.id,
         content=payload.message,

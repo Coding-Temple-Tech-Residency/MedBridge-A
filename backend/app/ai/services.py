@@ -22,7 +22,6 @@ def run_qa_engine(document_text: str, question: str, history: list[dict]):
     )
 
     return response
-from app.services.groq_client import ask_groq
 
 
 def run_qa_engine_single(document_text: str, question: str):
