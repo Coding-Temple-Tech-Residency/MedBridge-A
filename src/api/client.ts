@@ -10,6 +10,7 @@ import { getAccessToken as getToken, setAccessToken as setToken, triggerForceLog
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   data?: unknown;
+  formData?: FormData;
   _retry?: boolean;
 };
 
@@ -41,18 +42,23 @@ async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<{ data: T }> {
-  const { data, headers, _retry, ...rest } = options;
+  const { data, formData, headers, _retry, ...rest } = options;
   const token = getToken();
+  const isFormDataRequest = formData !== undefined;
 
   const res = await fetch(`${env.apiBaseUrl}${path}`, {
     method,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
+      ...(!isFormDataRequest ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
-    body: data !== undefined ? JSON.stringify(data) : undefined,
+    body: isFormDataRequest
+      ? formData
+      : data !== undefined
+        ? JSON.stringify(data)
+        : undefined,
     ...rest,
   });
 
@@ -89,7 +95,15 @@ async function request<T>(
 export const apiClient = {
   post: <T>(path: string, data?: unknown, options?: Omit<RequestOptions, 'data'>) =>
     request<T>('POST', path, { ...options, data }),
-  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
+
+  upload: <T>(
+    path: string,
+    formData: FormData,
+    options?: Omit<RequestOptions, 'data' | 'formData'>,
+  ) => request<T>('POST', path, { ...options, formData }),
+
+  get: <T>(path: string, options?: RequestOptions) =>
+    request<T>('GET', path, options),
 };
 
 // Compatibility exports for existing code paths.
