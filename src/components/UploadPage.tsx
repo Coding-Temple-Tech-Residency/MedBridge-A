@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { uploadDocument } from '../api/documents';
 import { sampleReportText } from '../mockData';
 
 const ALLOWED_FILE_TYPES = ['pdf', 'txt', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
@@ -85,7 +86,7 @@ const UploadPage: React.FC = () => {
     setSuccessMessage(null);
 
     if (tab === 'upload') {
-      setPastedText('');
+      setPastedText('');setErrorMessage('Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',);
     } else {
       setSelectedFile(null);
     }
@@ -97,7 +98,9 @@ const UploadPage: React.FC = () => {
     if (!extension || !ALLOWED_FILE_TYPES.includes(extension)) {
       setSelectedFile(null);
       setSuccessMessage(null);
-      setErrorMessage('Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',);
+      setErrorMessage(
+        'Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',
+      );
       return;
     }
 
@@ -143,12 +146,41 @@ const UploadPage: React.FC = () => {
     setPastedText(sampleReportText);
   };
 
-  const handleAnalyse = () => {
-    setIsAnalysing(true);
-    setTimeout(() => {
-      setIsAnalysing(false);
-      navigate('/results');
-    }, 3200);
+  const handleAnalyse = async () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    if (selectedFile) {
+      setIsAnalysing(true);
+
+      try {
+        const uploadedDocument = await uploadDocument(selectedFile);
+
+        navigate('/results', {
+          state: {
+            uploadedDocument,
+          },
+        });
+      } catch (error) {
+        console.error('Document upload failed:', error);
+
+        setIsAnalysing(false);
+        setErrorMessage(
+          'We could not upload your document. Please check your connection and try again.',
+        );
+      }
+
+      return;
+    }
+
+    if (pastedText.trim()) {
+      setIsAnalysing(true);
+
+      setTimeout(() => {
+        setIsAnalysing(false);
+        navigate('/results');
+      }, 3200);
+    }
   };
 
   if (isAnalysing) return <AnalysingScreen />;
