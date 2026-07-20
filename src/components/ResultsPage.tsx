@@ -7,9 +7,16 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { mockAnalysisResult } from '../mockData';
-import type { HealthMetric, ActionableStep } from '../types';
+import type { HealthMetric, ActionableStep, AISummaryPayload } from '../types';
+import AISummaryCard from './UI/AISummaryCard';
+
+type ResultsNavigationState = {
+  aiSummaryResponse?: AISummaryPayload;
+  aiSummaryLoading?: boolean;
+  aiSummaryError?: string;
+};
 
 // ── Metric range bar ─────────────────────────────────────────────────────────
 const MetricRangeBar: React.FC<{ metric: HealthMetric }> = ({ metric }) => {
@@ -64,8 +71,15 @@ const PriorityBadge: React.FC<{ priority: ActionableStep['priority'] }> = ({ pri
 // ── Main component ────────────────────────────────────────────────────────────
 const ResultsPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const onNewDocument = () => navigate('/upload');
   const result = mockAnalysisResult;
+  const state = location.state as ResultsNavigationState | null;
+  const backendSummaryPayload = state?.aiSummaryResponse;
+  const isSummaryLoading = state?.aiSummaryLoading ?? false;
+  const summaryError = state?.aiSummaryError ?? null;
+  const summaryPayload =
+    backendSummaryPayload ?? (isSummaryLoading || summaryError ? null : result.aiSummary);
 
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -147,10 +161,13 @@ const ResultsPage: React.FC = () => {
             What your results actually mean — in plain English.
           </p>
 
-          {/* Summary */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-5">
-            <p className="text-gray-600 leading-relaxed">{result.explanation.summary}</p>
-          </div>
+          {/* Reusable AI summary */}
+          <AISummaryCard
+            payload={summaryPayload}
+            isLoading={isSummaryLoading}
+            errorMessage={summaryError}
+            className="mb-5"
+          />
 
           {/* Per-finding cards */}
           <div className="space-y-4">

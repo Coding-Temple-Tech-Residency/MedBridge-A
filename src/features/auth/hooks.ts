@@ -15,7 +15,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { clearAccessToken, getAccessToken, setAccessToken } from '../../api/client';
+import { getAccessToken, setAccessToken } from './authToken';
 import {
   getCurrentUserApi,
   loginApi,
@@ -48,7 +48,7 @@ export function useCurrentUser() {
  * Log in with email + password.
  *
  * On success:
- *  1. Stores the returned access token in localStorage.
+ *  1. Stores the returned access token in memory.
  *  2. Pre-populates the currentUser cache so `/auth/me` doesn't need to
  *     be fetched separately after login.
  *
@@ -101,7 +101,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: logoutApi,
     onSettled: () => {
-      clearAccessToken();
+      setAccessToken(null);
       queryClient.clear();
     },
   });

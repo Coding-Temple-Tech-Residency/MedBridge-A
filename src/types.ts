@@ -37,11 +37,28 @@ export interface ActionableStep {
   icon: string;
 }
 
+/**
+ * Canonical payload shape for summary rendering.
+ * Accepts both camelCase and snake_case fields so backend responses can be
+ * rendered directly before full API mapping is in place.
+ */
+export interface AISummaryPayload {
+  summary?: string | null;
+  overall_summary?: string | null;
+  keyPoints?: string[] | null;
+  key_points?: string[] | null;
+  recommendations?: string[] | null;
+  next_steps?: string[] | null;
+  generatedAt?: string | null;
+  generated_at?: string | null;
+}
+
 export interface AnalysisResult {
   reportType: string;
   date: string;
   overallStatus: 'normal' | 'mostly-normal' | 'attention-needed';
   overallMessage: string;
+  aiSummary: AISummaryPayload;
   explanation: {
     summary: string;
     sections: ExplanationSection[];
