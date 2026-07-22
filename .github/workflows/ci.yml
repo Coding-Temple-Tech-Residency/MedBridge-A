@@ -1,18 +1,19 @@
 name: Backend CI
 
-# Runs on every push and pull request that touches the backend.
-# Keeps main green: if the app won't import or lint fails, the PR shows red
-# BEFORE it can be merged.
+# Runs on every push and pull request.
+# Keeps main green: if the app won't import, tests fail, or lint fails, the PR
+# shows red BEFORE it can be merged.
+#
+# Deliberately NOT path-filtered. GitHub's required status checks are not
+# conditional on paths — a required check applies to every PR. If this workflow
+# only ran on backend/** changes, a frontend-only PR would never trigger it,
+# never report a status, and sit blocked forever waiting on a check that cannot
+# run. Running always costs a couple of CI minutes and passes trivially when the
+# backend is untouched.
 on:
   push:
     branches: ["**"]
-    paths:
-      - "backend/**"
-      - ".github/workflows/ci.yml"
   pull_request:
-    paths:
-      - "backend/**"
-      - ".github/workflows/ci.yml"
 
 jobs:
   backend-ci:
@@ -59,5 +60,4 @@ jobs:
 
       - name: Lint (ruff)
         run: |
-          pip install ruff
           ruff check .
