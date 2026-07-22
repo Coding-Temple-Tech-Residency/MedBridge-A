@@ -1,0 +1,63 @@
+name: Backend CI
+
+# Runs on every push and pull request.
+# Keeps main green: if the app won't import, tests fail, or lint fails, the PR
+# shows red BEFORE it can be merged.
+#
+# Deliberately NOT path-filtered. GitHub's required status checks are not
+# conditional on paths — a required check applies to every PR. If this workflow
+# only ran on backend/** changes, a frontend-only PR would never trigger it,
+# never report a status, and sit blocked forever waiting on a check that cannot
+# run. Running always costs a couple of CI minutes and passes trivially when the
+# backend is untouched.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  backend-ci:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Import check
+        env:
+          DATABASE_URL: "sqlite:///./ci_test.db"
+          JWT_SECRET_KEY: "ci-not-a-real-secret"
+          JWT_ALGORITHM: "HS256"
+          ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+          GROQ_API_KEY: "ci-dummy-key-not-real"
+        run: |
+          python -c "import app.main; print('app.main imported OK')"
+
+      - name: Run tests
+        env:
+          DATABASE_URL: "sqlite:///./ci_test.db"
+          JWT_SECRET_KEY: "ci-not-a-real-secret"
+          JWT_ALGORITHM: "HS256"
+          ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+          GROQ_API_KEY: "ci-dummy-key-not-real"
+        run: |
+          pytest -v
+
+      - name: Lint (ruff)
+        run: |
+          ruff check .
