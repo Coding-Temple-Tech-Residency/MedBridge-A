@@ -109,7 +109,7 @@ def chat(
 
     # 6. Run AI engine (multi-turn)
     ai_response = run_qa_engine(
-        document_text=document.original_text,
+        document_text=document.original_text or "",
         question=payload.message,
         history=[
             {"role": m.role, "content": m.content}
