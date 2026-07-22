@@ -84,3 +84,43 @@ def save_summary(db: Session, document, summary_text: str):
     db.commit()
     db.refresh(document)
     return document
+
+
+# ---------------------------------------------------------------------------
+# Health metrics (plan §6)
+# ---------------------------------------------------------------------------
+def save_lab_results(db: Session, document, metrics: list[dict]):
+    """Persist extracted metrics as LabResult rows. Returns the created rows."""
+    from app.models import LabResult
+
+    rows = []
+    for m in metrics:
+        row = LabResult(
+            document_id=document.id,
+            user_id=document.user_id,
+            test_name=m["metric_name"],
+            value=m["metric_value"],
+            unit=m.get("unit"),
+            reference_range=m.get("reference_range"),
+            result_date=m.get("test_date"),
+            status=m.get("status", "unknown"),
+        )
+        db.add(row)
+        rows.append(row)
+
+    db.commit()
+    for row in rows:
+        db.refresh(row)
+    return rows
+
+
+def get_user_lab_results(db: Session, user_id: int):
+    """All of a user's lab results, oldest first (by test date, then insert)."""
+    from app.models import LabResult
+
+    return (
+        db.query(LabResult)
+        .filter(LabResult.user_id == user_id)
+        .order_by(LabResult.result_date.asc().nullslast(), LabResult.id.asc())
+        .all()
+    )

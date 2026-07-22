@@ -8,6 +8,11 @@ from app.models import User, Document, Conversation
 from app.ai.schemas import (
     SummarizeRequest,
     SummaryResponse,
+    ExtractMetricsRequest,
+    ExtractMetricsResponse,
+    MetricReading,
+    MetricSeries,
+    HealthMetricsResponse,
     AskRequest,
     AskResponse,
     ChatRequest,
@@ -16,6 +21,7 @@ from app.ai.schemas import (
 )
 
 from app.services.summarizer import summarize_document
+from app.services.metrics_extractor import extract_health_metrics
 
 from app.ai.services import (
     run_qa_engine_single,
@@ -25,6 +31,8 @@ from app.ai.services import (
 from app.ai.repo import (
     get_document,
     save_summary,
+    save_lab_results,
+    get_user_lab_results,
     get_or_create_conversation,
     get_conversation_history,
     insert_user_message,
@@ -221,4 +229,77 @@ def get_summary(
         summary_id=document.id,
         document_id=document.id,
         summary_text=document.ai_summary,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Health metrics (plan §6)
+# ---------------------------------------------------------------------------
+@router.post("/ai/extract-metrics", response_model=ExtractMetricsResponse)
+def extract_metrics(
+    payload: ExtractMetricsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Extract structured lab values from a document and store them."""
+    document = get_document(db, payload.document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if document.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden: not your document")
+
+    metrics = extract_health_metrics(document.original_text or "")
+    rows = save_lab_results(db, document, metrics)
+
+    return ExtractMetricsResponse(
+        document_id=document.id,
+        metrics_extracted=len(rows),
+        metrics=[_reading_from_row(r) for r in rows],
+    )
+
+
+@router.get("/health/metrics/{user_id}", response_model=HealthMetricsResponse)
+def health_metrics(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return a user's metrics grouped by name, each series ordered by date.
+
+    Grouped this way so the frontend can draw one trend line per metric without
+    reshaping the data.
+    """
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    rows = get_user_lab_results(db, user_id)
+
+    # group into series by metric name, preserving the oldest-first order
+    series_map: dict[str, list] = {}
+    for r in rows:
+        series_map.setdefault(r.test_name, []).append(r)
+
+    series = []
+    for name, readings in series_map.items():
+        series.append(
+            MetricSeries(
+                metric_name=name,
+                unit=readings[-1].unit,
+                latest_status=readings[-1].status,
+                readings=[_reading_from_row(r) for r in readings],
+            )
+        )
+
+    return HealthMetricsResponse(user_id=user_id, series=series)
+
+
+def _reading_from_row(r) -> MetricReading:
+    return MetricReading(
+        id=r.id,
+        metric_name=r.test_name,
+        metric_value=r.value,
+        unit=r.unit,
+        reference_range=r.reference_range,
+        test_date=r.result_date.isoformat() if r.result_date else None,
+        status=r.status,
     )

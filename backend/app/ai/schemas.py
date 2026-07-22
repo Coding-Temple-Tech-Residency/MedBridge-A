@@ -45,3 +45,44 @@ class SummaryResponse(BaseModel):
     summary_id: int
     document_id: int
     summary_text: str
+
+
+# --- Health metrics (plan §6) ---
+
+
+class ExtractMetricsRequest(BaseModel):
+    document_id: int
+
+
+class MetricReading(BaseModel):
+    id: int
+    metric_name: str
+    metric_value: float
+    unit: str | None = None
+    reference_range: str | None = None
+    test_date: str | None = None
+    status: str
+
+    class Config:
+        from_attributes = True
+
+
+class ExtractMetricsResponse(BaseModel):
+    document_id: int
+    metrics_extracted: int
+    metrics: list[MetricReading]
+
+
+class MetricSeries(BaseModel):
+    # One metric tracked over time — e.g. every Hemoglobin reading, oldest
+    # first. This is the shape a trend chart consumes directly: name + an
+    # ordered list of points.
+    metric_name: str
+    unit: str | None = None
+    latest_status: str
+    readings: list[MetricReading]
+
+
+class HealthMetricsResponse(BaseModel):
+    user_id: int
+    series: list[MetricSeries]

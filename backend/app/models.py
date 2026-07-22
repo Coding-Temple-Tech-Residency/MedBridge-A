@@ -105,6 +105,10 @@ class LabResult(Base):
     reference_range = Column(String, nullable=True)  # e.g. "4.0-5.6"
     result_date = Column(Date, nullable=True)      # when the test was taken
 
+    # "normal", "borderline", "abnormal", "unknown" — set by the metrics
+    # extraction engine so the dashboard can colour-code each reading.
+    status = Column(String, nullable=False, default="unknown")
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     document = relationship("Document", back_populates="lab_results")
