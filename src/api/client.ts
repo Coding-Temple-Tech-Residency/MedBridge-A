@@ -1,12 +1,20 @@
-// Thin fetch wrapper used by auth hooks and API call helpers.
+// Thin fetch wrapper used by all feature hooks and API call helpers.
 //
-// - Base URL comes from validated env config.
-// - `credentials: 'include'` ensures the HttpOnly refresh-token cookie is sent.
-// - Access tokens are injected via Authorization on every request.
-// - On 401, the client attempts one silent refresh and retries once.
+// - Base URL is read from the validated env config.
+// - `credentials: 'include'` ensures the HttpOnly refresh-token cookie is
+//   sent automatically on every request (including /api/v1/auth/refresh).
+// - Access tokens are injected via the Authorization header on every request.
+// - On a 401 response, the client silently attempts a token refresh. If the
+//   refresh succeeds the original request is retried. If the refresh also
+//   fails, the client triggers a forced logout (via authToken callbacks) and
+//   the user is redirected to the login screen with a session-expired notice.
 
 import { env } from '@/env';
-import { getAccessToken as getToken, setAccessToken as setToken, triggerForceLogout } from '@/features/auth/authToken';
+import {
+  getAccessToken as getToken,
+  setAccessToken as setToken,
+  triggerForceLogout,
+} from '@/features/auth/authToken';
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   data?: unknown;
@@ -33,6 +41,7 @@ function refreshAccessTokenOnce(): Promise<string | null> {
       refreshPromise = null;
     });
   }
+
   return refreshPromise;
 }
 
@@ -49,7 +58,7 @@ async function request<T>(
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
       ...headers,
     },
     body: data !== undefined ? JSON.stringify(data) : undefined,
