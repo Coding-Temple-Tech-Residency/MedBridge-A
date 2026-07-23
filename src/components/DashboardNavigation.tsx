@@ -9,7 +9,9 @@ type DashboardNavigationProps = {
 const navItems = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/upload', label: 'Upload' },
+  { to: '/chat', label: 'Chat' },
   { to: '/results', label: 'Results' },
+  { to: '/profile', label: 'Profile' },
 ];
 
 const DashboardNavigation: React.FC<DashboardNavigationProps> = ({

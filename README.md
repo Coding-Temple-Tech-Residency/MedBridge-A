@@ -63,6 +63,18 @@ throws a clear error immediately instead of failing silently later.
 | `npm run format`       | Format all files with Prettier.                    |
 | `npm run format:check` | Check formatting without writing changes.          |
 
+### Frontend CI
+
+- Frontend CI runs from [.github/workflows/frontend-ci.yml](.github/workflows/frontend-ci.yml).
+- It triggers on pull requests and pushes that modify frontend-related files.
+- The workflow runs:
+  - `npm ci`
+  - `npm run lint`
+  - `npm run build`
+
+This ensures frontend changes pass linting and produce a valid production build
+before merge.
+
 ---
 
 ## Project structure
