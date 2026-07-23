@@ -14,7 +14,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app import models
 
-from app.ai.tasks import trigger_summarize
+from app.ai.tasks import trigger_summarize, trigger_extract_metrics
 
 from .schemas import DocumentUploadResponse
 from .services import DocumentService
@@ -74,5 +74,6 @@ async def upload_document(
     # immediately; the AI work happens after the response is sent. Failures
     # are logged inside the task and never affect this response (#51).
     background_tasks.add_task(trigger_summarize, result["document_id"])
+    background_tasks.add_task(trigger_extract_metrics, result["document_id"])
 
     return result

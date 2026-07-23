@@ -90,8 +90,14 @@ def save_summary(db: Session, document, summary_text: str):
 # Health metrics (plan §6)
 # ---------------------------------------------------------------------------
 def save_lab_results(db: Session, document, metrics: list[dict]):
-    """Persist extracted metrics as LabResult rows. Returns the created rows."""
+    """Persist extracted metrics as LabResult rows. Returns the created rows.
+
+    Re-extracting a document replaces its metrics rather than appending — so a
+    repeated call doesn't create duplicate readings.
+    """
     from app.models import LabResult
+
+    db.query(LabResult).filter(LabResult.document_id == document.id).delete()
 
     rows = []
     for m in metrics:

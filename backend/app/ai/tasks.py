@@ -51,3 +51,29 @@ def trigger_summarize(document_id: int) -> None:
             logger.exception("Could not mark document %s as failed", document_id)
     finally:
         db.close()
+
+
+def trigger_extract_metrics(document_id: int) -> None:
+    """Extract health metrics in the background after upload (plan §6).
+
+    Own session, and all errors swallowed — the upload already returned 201 and
+    a missing metric must never turn into a failed request. Mirrors
+    trigger_summarize.
+    """
+    from app.ai.repo import save_lab_results
+    from app.services.metrics_extractor import extract_health_metrics
+
+    db = SessionLocal()
+    try:
+        document = db.query(Document).filter(Document.id == document_id).first()
+        if document is None or not document.original_text:
+            return
+        metrics = extract_health_metrics(document.original_text)
+        if metrics:
+            save_lab_results(db, document, metrics)
+            logger.info("Background metrics: %d saved for document %s",
+                        len(metrics), document_id)
+    except Exception:
+        logger.exception("Background metrics failed for document %s", document_id)
+    finally:
+        db.close()
