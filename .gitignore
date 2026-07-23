@@ -35,3 +35,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# local databases / smoke-test artifacts
+*.db
+!Thumbs.db
