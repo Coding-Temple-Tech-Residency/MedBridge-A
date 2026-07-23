@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/features/auth/AuthContext';
 import { sampleReportText } from '../mockData';
+import PublicHeader from './PublicHeader';
+
+const ALLOWED_FILE_TYPES = ['pdf', 'txt', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const ANALYSIS_STEPS = [
   'Reading document structure...',
@@ -21,42 +27,45 @@ const AnalysingScreen: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F2F7F4] flex items-center justify-center p-6">
-      <div className="text-center max-w-sm w-full">
-        <div className="relative w-24 h-24 mx-auto mb-8">
-          <div className="absolute inset-0 rounded-full border-4 border-[#8FD4A8]" />
-          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#2E7D55] animate-spin" />
-          <div className="absolute inset-0 flex items-center justify-center text-3xl">🧬</div>
-        </div>
-        <h2 className="text-2xl font-bold text-[#1E3A2F] mb-2">Analysing Your Document</h2>
-        <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-          Our AI is reviewing your medical document and generating your personalised health
-          summary...
-        </p>
-        <div className="text-left space-y-3">
-          {ANALYSIS_STEPS.map((s, i) => (
-            <div
-              key={i}
-              className={`flex items-center gap-3 transition-all duration-400 ${
-                i < step ? 'opacity-40' : i === step ? 'opacity-100' : 'opacity-20'
-              }`}
-            >
-              {i < step ? (
-                <span className="w-5 h-5 rounded-full bg-[#2E7D55] flex-shrink-0 flex items-center justify-center text-white text-xs font-bold">
-                  ✓
-                </span>
-              ) : i === step ? (
-                <span className="w-5 h-5 rounded-full border-2 border-[#2E7D55] flex-shrink-0 animate-pulse" />
-              ) : (
-                <span className="w-5 h-5 rounded-full border-2 border-gray-200 flex-shrink-0" />
-              )}
-              <span
-                className={`text-sm ${i === step ? 'text-[#1E3A2F] font-medium' : 'text-gray-400'}`}
+    <div className="min-h-screen bg-[#F2F7F4]">
+      <PublicHeader activeSection="upload" />
+      <div className="flex min-h-[calc(100vh-73px)] items-center justify-center p-6">
+        <div className="text-center max-w-sm w-full">
+          <div className="relative w-24 h-24 mx-auto mb-8">
+            <div className="absolute inset-0 rounded-full border-4 border-[#8FD4A8]" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#2E7D55] animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center text-3xl">🧬</div>
+          </div>
+          <h2 className="text-2xl font-bold text-[#1E3A2F] mb-2">Analysing Your Document</h2>
+          <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+            Our AI is reviewing your medical document and generating your personalised health
+            summary...
+          </p>
+          <div className="text-left space-y-3">
+            {ANALYSIS_STEPS.map((s, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-3 transition-all duration-400 ${
+                  i < step ? 'opacity-40' : i === step ? 'opacity-100' : 'opacity-20'
+                }`}
               >
-                {s}
-              </span>
-            </div>
-          ))}
+                {i < step ? (
+                  <span className="w-5 h-5 rounded-full bg-[#2E7D55] flex-shrink-0 flex items-center justify-center text-white text-xs font-bold">
+                    ✓
+                  </span>
+                ) : i === step ? (
+                  <span className="w-5 h-5 rounded-full border-2 border-[#2E7D55] flex-shrink-0 animate-pulse" />
+                ) : (
+                  <span className="w-5 h-5 rounded-full border-2 border-gray-200 flex-shrink-0" />
+                )}
+                <span
+                  className={`text-sm ${i === step ? 'text-[#1E3A2F] font-medium' : 'text-gray-400'}`}
+                >
+                  {s}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -65,29 +74,67 @@ const AnalysingScreen: React.FC = () => {
 
 const UploadPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [pastedText, setPastedText] = useState('');
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
 
   const hasContent = fileName !== null || pastedText.trim().length > 0;
 
+  const handleTabChange = (tab: 'upload' | 'paste') => {
+    setActiveTab(tab);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+
+  const validateFile = (file: File) => {
+    const extension = file.name.split('.').pop()?.toLowerCase();
+
+    if (!extension || !ALLOWED_FILE_TYPES.includes(extension)) {
+      setFileName(null);
+      setSuccessMessage(null);
+      setErrorMessage('Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',);
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setFileName(null);
+      setSuccessMessage(null);
+      setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB} MB. Please upload a smaller file.`);
+      return;
+    }
+
+    setFileName(file.name);
+    setErrorMessage(null);
+    setSuccessMessage('File validated successfully. Ready for analysis.');
+  };
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
+
     const file = e.dataTransfer.files[0];
-    if (file) setFileName(file.name);
+
+    if (file) {
+      validateFile(file);
+    }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setFileName(file.name);
+
+    if (file) {
+      validateFile(file);
+    }
   };
 
   const handleTrySample = () => {
     setPastedText(sampleReportText);
-    setActiveTab('paste');
+    handleTabChange('paste');
   };
 
   const handleAnalyse = () => {
@@ -101,8 +148,16 @@ const UploadPage: React.FC = () => {
   if (isAnalysing) return <AnalysingScreen />;
 
   return (
-    <div className="min-h-screen bg-[#F2F7F4] py-12 px-6">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#F2F7F4]">
+      <PublicHeader activeSection="upload" />
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        {!isAuthenticated && (
+          <div className="mb-5 rounded-xl border border-[#8FD4A8] bg-[#E5F2EA] p-3 text-sm text-[#1E3A2F]">
+            You are using guest mode. Upload and analysis still work normally. Sign in if you want to
+            save your lab history and long-term progress.
+          </div>
+        )}
+
         {/* Page header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#1E3A2F] mb-2">Analyse Your Medical Document</h1>
@@ -114,7 +169,7 @@ const UploadPage: React.FC = () => {
         {/* Tab switcher */}
         <div className="flex bg-white rounded-xl border border-gray-200 p-1 mb-5 shadow-sm">
           <button
-            onClick={() => setActiveTab('upload')}
+            onClick={() => handleTabChange('upload')}
             className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
               activeTab === 'upload'
                 ? 'bg-[#1E3A2F] text-white shadow-sm'
@@ -124,7 +179,7 @@ const UploadPage: React.FC = () => {
             📁 Upload File
           </button>
           <button
-            onClick={() => setActiveTab('paste')}
+            onClick={() => handleTabChange('paste')}
             className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
               activeTab === 'paste'
                 ? 'bg-[#1E3A2F] text-white shadow-sm'
@@ -173,10 +228,22 @@ const UploadPage: React.FC = () => {
                   {isDragging ? 'Drop it here!' : 'Drop your file here'}
                 </p>
                 <p className="text-gray-400 mt-1">or click to browse</p>
-                <p className="text-xs text-gray-300 mt-4">Supports: PDF, DOCX, TXT, JPG, PNG</p>
+                <p className="text-xs text-gray-300 mt-4"> Supports: PDF, DOC, DOCX, TXT, JPG, JPEG, PNG </p>
               </div>
             )}
           </div>
+        )}
+
+        {errorMessage && (
+          <p className="mt-3 text-sm text-red-600 text-center">
+            {errorMessage}
+          </p>
+        )}
+
+        {successMessage && (
+          <p className="mt-3 text-sm text-green-700 text-center">
+            {successMessage}
+          </p>
         )}
 
         {/* Paste text area */}

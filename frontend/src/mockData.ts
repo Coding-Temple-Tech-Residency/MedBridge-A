@@ -1,4 +1,4 @@
-import type { AnalysisResult } from './types';
+import type { AnalysisResult, HealthTrendPoint } from './types';
 
 export const sampleReportText = `LABORATORY REPORT
 ──────────────────────────────────────────────────
@@ -46,6 +46,22 @@ export const mockAnalysisResult: AnalysisResult = {
   overallStatus: 'mostly-normal',
   overallMessage:
     'Your results are mostly within normal ranges. One marker — fasting glucose — is slightly elevated and worth monitoring.',
+
+  aiSummary: {
+    summary:
+      "We reviewed your Complete Blood Count and Metabolic Panel. Most results are in healthy ranges. The only value to monitor is fasting glucose at 108 mg/dL, which is slightly above the normal fasting range and can often improve with small lifestyle changes.",
+    key_points: [
+      'Most blood cell, kidney, and electrolyte markers are within normal ranges.',
+      'Fasting glucose is mildly elevated at 108 mg/dL.',
+      'Cholesterol panel remains in a generally healthy range.',
+    ],
+    recommendations: [
+      'Follow up with your clinician about fasting glucose in the next 2-4 weeks.',
+      'Reduce added sugars and refined carbohydrates in daily meals.',
+      'Aim for at least 30 minutes of light to moderate activity most days.',
+    ],
+    generated_at: 'Generated Jul 9, 2026',
+  },
 
   explanation: {
     summary:
@@ -238,3 +254,42 @@ export const mockAnalysisResult: AnalysisResult = {
     },
   ],
 };
+
+export const mockHealthTrendData: HealthTrendPoint[] = [
+  {
+    month: 'Jan',
+    glucose: 103,
+    ldl: 121,
+    triglycerides: 149,
+  },
+  {
+    month: 'Feb',
+    glucose: 104,
+    ldl: 123,
+    triglycerides: 146,
+  },
+  {
+    month: 'Mar',
+    glucose: 107,
+    ldl: 119,
+    triglycerides: 144,
+  },
+  {
+    month: 'Apr',
+    glucose: 109,
+    ldl: 118,
+    triglycerides: 142,
+  },
+  {
+    month: 'May',
+    glucose: 106,
+    ldl: 116,
+    triglycerides: 139,
+  },
+  {
+    month: 'Jun',
+    glucose: 108,
+    ldl: 118,
+    triglycerides: 140,
+  },
+];

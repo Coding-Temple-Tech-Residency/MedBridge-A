@@ -7,9 +7,18 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/features/auth/AuthContext';
 import { mockAnalysisResult } from '../mockData';
-import type { HealthMetric, ActionableStep } from '../types';
+import type { HealthMetric, ActionableStep, AISummaryPayload } from '../types';
+import AISummaryCard from './UI/AISummaryCard';
+import PublicHeader from './PublicHeader';
+
+type ResultsNavigationState = {
+  aiSummaryResponse?: AISummaryPayload;
+  aiSummaryLoading?: boolean;
+  aiSummaryError?: string;
+};
 
 // ── Metric range bar ─────────────────────────────────────────────────────────
 const MetricRangeBar: React.FC<{ metric: HealthMetric }> = ({ metric }) => {
@@ -64,8 +73,16 @@ const PriorityBadge: React.FC<{ priority: ActionableStep['priority'] }> = ({ pri
 // ── Main component ────────────────────────────────────────────────────────────
 const ResultsPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const onNewDocument = () => navigate('/upload');
   const result = mockAnalysisResult;
+  const state = location.state as ResultsNavigationState | null;
+  const backendSummaryPayload = state?.aiSummaryResponse;
+  const isSummaryLoading = state?.aiSummaryLoading ?? false;
+  const summaryError = state?.aiSummaryError ?? null;
+  const summaryPayload =
+    backendSummaryPayload ?? (isSummaryLoading || summaryError ? null : result.aiSummary);
 
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -96,6 +113,8 @@ const ResultsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F2F7F4] pb-20">
+      <PublicHeader activeSection="results" />
+
       {/* ── Summary banner ── */}
       <div className={`${statusBanner.bar} border-b py-5 px-6`}>
         <div className="max-w-3xl mx-auto flex items-start gap-4">
@@ -138,6 +157,13 @@ const ResultsPage: React.FC = () => {
         </div>
       </div>
 
+      {!isAuthenticated && (
+        <div className="mx-auto mt-4 max-w-3xl rounded-xl border border-[#8FD4A8] bg-[#E5F2EA] px-4 py-3 text-sm text-[#1E3A2F]">
+          Guest mode is active. You can review results and chat with AI now. Create an account to
+          save progress across visits.
+        </div>
+      )}
+
       {/* ── Content ── */}
       <div className="max-w-3xl mx-auto px-6 pt-10 space-y-14">
         {/* ── Section 1: Plain language explanation ── */}
@@ -147,10 +173,13 @@ const ResultsPage: React.FC = () => {
             What your results actually mean — in plain English.
           </p>
 
-          {/* Summary */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-5">
-            <p className="text-gray-600 leading-relaxed">{result.explanation.summary}</p>
-          </div>
+          {/* Reusable AI summary */}
+          <AISummaryCard
+            payload={summaryPayload}
+            isLoading={isSummaryLoading}
+            errorMessage={summaryError}
+            className="mb-5"
+          />
 
           {/* Per-finding cards */}
           <div className="space-y-4">

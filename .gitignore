@@ -44,3 +44,4 @@ Thumbs.db
 
 # local databases / smoke-test artifacts
 *.db
+!Thumbs.db

@@ -30,11 +30,12 @@ summary, a health dashboard, and actionable next steps.
 git clone https://github.com/Coding-Temple-Tech-Residency/MedBridge-A.git
 cd MedBridge-A
 
-# 2. Install dependencies
+# 2. Enter the frontend app and install dependencies
+cd frontend
 npm install
 
 # 3. Set up environment variables
-cp .env.example .env        # then open .env and adjust values if needed
+cp .env.example .env        # then open frontend/.env and adjust values if needed
 
 # 4. Start the dev server
 npm run dev                 # serves at http://localhost:5173
@@ -45,7 +46,7 @@ The app boots at the URL Vite prints (default `http://localhost:5173`).
 ### Environment variables
 
 All client-side env vars must be prefixed with `VITE_` (Vite only exposes those).
-They are validated at startup by `src/env.ts` — a missing or malformed value
+They are validated at startup by `frontend/src/env.ts` — a missing or malformed value
 throws a clear error immediately instead of failing silently later.
 
 | Variable            | Required | Description                        | Example                 |
@@ -62,6 +63,18 @@ throws a clear error immediately instead of failing silently later.
 | `npm run lint`         | Run ESLint over the codebase (zero warnings = OK). |
 | `npm run format`       | Format all files with Prettier.                    |
 | `npm run format:check` | Check formatting without writing changes.          |
+
+### Frontend CI
+
+- Frontend CI runs from [.github/workflows/frontend-ci.yml](.github/workflows/frontend-ci.yml).
+- It triggers on pull requests and pushes that modify frontend-related files.
+- The workflow runs:
+  - `npm ci`
+  - `npm run lint`
+  - `npm run build`
+
+This ensures frontend changes pass linting and produce a valid production build
+before merge.
 
 ---
 
@@ -118,20 +131,21 @@ All backend environment variables live in `backend/.env` (copied from `.env.exam
 ## Project structure
 
 ```
-src/
-  components/    Page + UI components (Login, Landing, Upload, Results, Header, Logo)
-  env.ts         Validated environment-variable access
-  mockData.ts    Sample report + mock analysis result (placeholder until API is wired)
-  types.ts       Shared TypeScript types
-  App.tsx        Top-level view switching
-  main.tsx       React entry point
+frontend/
+  src/
+    components/  Page + UI components (Login, Landing, Upload, Results, Header, Logo)
+    env.ts       Validated environment-variable access
+    mockData.ts   Sample report + mock analysis result (placeholder until API is wired)
+    types.ts      Shared TypeScript types
+    App.tsx       Top-level view switching
+    main.tsx      React entry point
 ```
 
 ---
 
 ## Notes / known limitations
 
-- The analysis flow currently runs on **mock data** (`src/mockData.ts`); the
+- The analysis flow currently runs on **mock data** (`frontend/src/mockData.ts`); the
   backend API is not yet wired in. Login and document analysis are simulated.
 - Auth is **UI-only** at this stage — real `POST /api/auth/*` calls, JWT storage,
   and protected routing are tracked in later Sprint 1 issues (FE-05, FE-06, FE-07)
