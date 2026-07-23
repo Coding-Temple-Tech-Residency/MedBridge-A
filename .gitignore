@@ -1,13 +1,17 @@
-# Environment / secrets
+# =====================================================
+# Healthcare App — root .gitignore (monorepo)
+# =====================================================
+
+# ---- Environment / secrets (NEVER commit) ----
 .env
 .env.*
 !.env.example
 
-# Python / backend
+# ---- Python / backend ----
 venv/
 .venv/
 env/
-__pycache__/
+__pycache__
 *.py[cod]
 *$py.class
 *.egg-info/
@@ -17,23 +21,25 @@ __pycache__/
 .coverage
 htmlcov/
 
-# Node / frontend
+# ---- Node / frontend ----
 node_modules/
 dist/
 build/
 .next/
 *.local
+package-lock.json
+public/logo.png
 
-# Editors / IDEs
+# ---- Editors / IDEs ----
 .vscode/
 .idea/
 *.swp
 
-# OS
+# ---- OS ----
 .DS_Store
 Thumbs.db
 
-# Logs
+# ---- Logs ----
 *.log
 
 # local databases / smoke-test artifacts
