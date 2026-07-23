@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,10 +13,25 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="MedBridge Auth")
 
-origins = [
+# Allowed browser origins for CORS.
+#
+# Defaults cover local development (Vite serves the frontend on 5173; 3000 is
+# kept for anyone running a CRA-style dev server). Deployed environments set
+# CORS_ORIGINS to a comma-separated list instead, so the Azure URL doesn't have
+# to be hardcoded here.
+_default_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+
+_env_origins = os.environ.get("CORS_ORIGINS", "").strip()
+origins = (
+    [o.strip() for o in _env_origins.split(",") if o.strip()]
+    if _env_origins
+    else _default_origins
+)
 
 app.add_middleware(
     CORSMiddleware,
