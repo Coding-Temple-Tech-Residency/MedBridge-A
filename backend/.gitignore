@@ -1,41 +1,9 @@
-# =====================================================
-# Healthcare App — root .gitignore (monorepo)
-# =====================================================
 
-# ---- Environment / secrets (NEVER commit) ----
-.env
-.env.*
-!.env.example
-
-# ---- Python / backend ----
-venv/
-.venv/
-env/
+cookies.txt
+*.bak
+*.pyx
 __pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-
-# ---- Node / frontend ----
-node_modules/
-dist/
-build/
-.next/
-*.local
-
-# ---- Editors / IDEs ----
-.vscode/
-.idea/
-*.swp
-
-# ---- OS ----
-.DS_Store
-Thumbs.db
-
-# ---- Logs ----
-*.log
+jar.txt
+__pycache__/
+venv/
+.env
