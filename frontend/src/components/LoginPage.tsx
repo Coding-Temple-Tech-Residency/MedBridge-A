@@ -4,13 +4,13 @@ import Button from './UI/Button';
 import Input from './UI/Input';
 import Card from './UI/Card';
 import { useLogin } from '@/features/auth/useLogin';
-import { validateLoginForm } from '@/features/auth/validation';
+import { validateLoginForm, type LoginErrors } from '@/features/auth/validation';
 
 const LoginPage: React.FC = () => {
   const { login, isPending, formError } = useLogin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [clientError, setClientError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<LoginErrors>({});
   const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
@@ -22,20 +22,18 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setClientError('');
     setSessionExpired(false);
 
     const errors = validateLoginForm({ email, password });
-    const firstError = errors.email ?? errors.password;
-    if (firstError) {
-      setClientError(firstError);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
       return;
     }
 
     login({ email: email.trim(), password });
   };
 
-  const displayError = clientError || formError;
+  const displayError = formError;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#3C936A] via-[#57A97F] to-[#83CDA6] flex items-center justify-center p-6">
@@ -75,8 +73,14 @@ const LoginPage: React.FC = () => {
               type="email"
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (fieldErrors.email) {
+                  setFieldErrors((current) => ({ ...current, email: undefined }));
+                }
+              }}
               placeholder="you@example.com"
+              error={fieldErrors.email}
               className="mb-5"
             />
 
@@ -86,8 +90,14 @@ const LoginPage: React.FC = () => {
               type="password"
               autoComplete="current-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (fieldErrors.password) {
+                  setFieldErrors((current) => ({ ...current, password: undefined }));
+                }
+              }}
               placeholder="••••••••"
+              error={fieldErrors.password}
               className="mb-6"
             />
 

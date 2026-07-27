@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '@/api/client';
+import { messageForStatus, toApiError } from '@/api/errors';
 import { setAccessToken } from './authToken';
 
 type LoginInput = { email: string; password: string };
@@ -20,16 +21,20 @@ export function useLogin() {
     onMutate: () => setFormError(null),
     onSuccess: (data) => {
       setAccessToken(data.access_token); // in-memory; refresh token rides in HttpOnly cookie
-      navigate('/', { replace: true });
+      navigate('/dashboard', { replace: true });
     },
     onError: (err: unknown) => {
-      // Never reveal which field was wrong
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 401) {
-        setFormError('Invalid email or password.');
-      } else {
-        setFormError('Something went wrong. Please try again.');
-      }
+      const apiError = toApiError(err);
+      const message = messageForStatus(
+        apiError.status,
+        {
+          401: 'Invalid email or password.',
+          500: 'Server error. Please try again in a moment.',
+        },
+        'Something went wrong. Please try again.',
+      );
+
+      setFormError(message);
     },
   });
 
