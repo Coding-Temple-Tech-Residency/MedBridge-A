@@ -17,7 +17,49 @@ summary, a health dashboard, and actionable next steps.
 
 ---
 
-## Frontend Setup
+## Run The Application (Recommended)
+
+Use Docker Compose to run both frontend and backend together.
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine + Compose plugin)
+
+### Quick start
+
+```bash
+# 1) Clone and enter the repo
+git clone https://github.com/Coding-Temple-Tech-Residency/MedBridge-A.git
+cd MedBridge-A
+
+# 2) Build and start backend + frontend
+docker compose up --build
+```
+
+### URLs
+
+- Frontend: http://localhost:3000
+- Backend API root: http://localhost:8000
+- Backend docs: http://localhost:8000/docs
+
+### Stop the stack
+
+```bash
+docker compose down
+```
+
+### Demo flow to verify
+
+1. Create a new account on `/register`.
+2. Sign in on `/login`.
+3. Upload a test document on `/upload`.
+4. Review the generated results on `/results`.
+5. Ask questions in `/chat`.
+6. Manage appointments in `/profile`.
+
+---
+
+## Local Frontend Setup (Optional)
 
 ### Prerequisites
 
@@ -78,14 +120,12 @@ before merge.
 
 ---
 
----
-
-## Backend Setup
+## Local Backend Setup (Optional)
 
 ### Prerequisites
 
-- **Python 3.13+** and pip
-- **PostgreSQL** running locally (or a connection string to a hosted instance)
+- **Python 3.12+** and pip
+- SQLite or PostgreSQL
 - **Tesseract OCR** — required by `pytesseract` for image-based document parsing:
   `brew install tesseract` (macOS)
 
@@ -127,6 +167,12 @@ All backend environment variables live in `backend/.env` (copied from `.env.exam
 | `SUPABASE_ANON_KEY`             | Yes      | Supabase anonymous/public API key.                | From Supabase project settings                               |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Yes      | Supabase service-role key (server-side only, never exposed to the client). | From Supabase project settings          |
 
+For Docker Compose demo runs in this branch, storage defaults to local filesystem via:
+
+- `STORAGE_BACKEND=local`
+
+This allows document upload to work without Supabase credentials.
+
 
 ## Project structure
 
@@ -145,11 +191,9 @@ frontend/
 
 ## Notes / known limitations
 
-- The analysis flow currently runs on **mock data** (`frontend/src/mockData.ts`); the
-  backend API is not yet wired in. Login and document analysis are simulated.
-- Auth is **UI-only** at this stage — real `POST /api/auth/*` calls, JWT storage,
-  and protected routing are tracked in later Sprint 1 issues (FE-05, FE-06, FE-07)
-  and depend on the API-contract sync (FE-08).
+- In environments where `GROQ_API_KEY` is empty, background AI summarization/metrics
+  tasks will log connection errors.
+- Chat remains usable in that case through the current fallback response behavior.
 
 ---
 
