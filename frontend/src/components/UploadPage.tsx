@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { uploadDocument } from '../api/documents';
 import { useAuth } from '@/features/auth/AuthContext';
 import { sampleReportText } from '../mockData';
 import PublicHeader from './PublicHeader';
@@ -77,38 +78,46 @@ const UploadPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [pastedText, setPastedText] = useState('');
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
 
-  const hasContent = fileName !== null || pastedText.trim().length > 0;
+  const hasContent = selectedFile !== null || pastedText.trim().length > 0;
 
   const handleTabChange = (tab: 'upload' | 'paste') => {
     setActiveTab(tab);
     setErrorMessage(null);
     setSuccessMessage(null);
+
+    if (tab === 'upload') {
+      setPastedText('');setErrorMessage('Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',);
+    } else {
+      setSelectedFile(null);
+    }
   };
 
   const validateFile = (file: File) => {
     const extension = file.name.split('.').pop()?.toLowerCase();
 
     if (!extension || !ALLOWED_FILE_TYPES.includes(extension)) {
-      setFileName(null);
+      setSelectedFile(null);
       setSuccessMessage(null);
-      setErrorMessage('Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',);
+      setErrorMessage(
+        'Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',
+      );
       return;
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      setFileName(null);
+      setSelectedFile(null);
       setSuccessMessage(null);
       setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB} MB. Please upload a smaller file.`);
       return;
     }
 
-    setFileName(file.name);
+    setSelectedFile(file);
     setErrorMessage(null);
     setSuccessMessage('File validated successfully. Ready for analysis.');
   };
@@ -117,14 +126,20 @@ const UploadPage: React.FC = () => {
     e.preventDefault();
     setIsDragging(false);
 
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     const file = e.dataTransfer.files[0];
 
     if (file) {
       validateFile(file);
     }
   };
-
+  
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     const file = e.target.files?.[0];
 
     if (file) {
@@ -133,16 +148,45 @@ const UploadPage: React.FC = () => {
   };
 
   const handleTrySample = () => {
-    setPastedText(sampleReportText);
     handleTabChange('paste');
+    setPastedText(sampleReportText);
   };
 
-  const handleAnalyse = () => {
-    setIsAnalysing(true);
-    setTimeout(() => {
-      setIsAnalysing(false);
-      navigate('/results');
-    }, 3200);
+  const handleAnalyse = async () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    if (selectedFile) {
+      setIsAnalysing(true);
+
+      try {
+        const uploadedDocument = await uploadDocument(selectedFile);
+
+        navigate('/results', {
+          state: {
+            uploadedDocument,
+          },
+        });
+      } catch (error) {
+        console.error('Document upload failed:', error);
+
+        setIsAnalysing(false);
+        setErrorMessage(
+          'We could not upload your document. Please check your connection and try again.',
+        );
+      }
+
+      return;
+    }
+
+    if (pastedText.trim()) {
+      setIsAnalysing(true);
+
+      setTimeout(() => {
+        setIsAnalysing(false);
+        navigate('/results');
+      }, 3200);
+    }
   };
 
   if (isAnalysing) return <AnalysingScreen />;
@@ -202,7 +246,7 @@ const UploadPage: React.FC = () => {
             className={`relative border-2 border-dashed rounded-2xl p-14 text-center transition-all duration-200 cursor-pointer ${
               isDragging
                 ? 'border-[#2E7D55] bg-green-50 scale-[1.01]'
-                : fileName
+                : selectedFile
                   ? 'border-[#8FD4A8] bg-green-50'
                   : 'border-gray-200 bg-white hover:border-[#8FD4A8] hover:bg-[#F2F7F4]'
             }`}
@@ -215,10 +259,10 @@ const UploadPage: React.FC = () => {
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               aria-label="Upload medical document"
             />
-            {fileName ? (
+            {selectedFile ? (
               <div>
                 <div className="text-5xl mb-3">✅</div>
-                <p className="font-semibold text-[#1E3A2F] text-lg">{fileName}</p>
+                <p className="font-semibold text-[#1E3A2F] text-lg">{selectedFile.name}</p>
                 <p className="text-sm text-gray-400 mt-1">Click to change file</p>
               </div>
             ) : (
@@ -253,7 +297,11 @@ const UploadPage: React.FC = () => {
               <span className="text-sm font-medium text-gray-500">Medical document text</span>
               {pastedText && (
                 <button
-                  onClick={() => setPastedText('')}
+                  onClick={() => {
+                    setPastedText('');
+                    setErrorMessage(null);
+                    setSuccessMessage(null);
+                  }}
                   className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   Clear
@@ -262,7 +310,11 @@ const UploadPage: React.FC = () => {
             </div>
             <textarea
               value={pastedText}
-              onChange={(e) => setPastedText(e.target.value)}
+              onChange={(e) => {
+                setPastedText(e.target.value);
+                setErrorMessage(null);
+                setSuccessMessage(null);
+              }}
               placeholder="Paste your lab report, prescription, clinical notes, or any medical document text here..."
               className="w-full h-64 p-4 text-sm text-gray-700 font-mono resize-none focus:outline-none placeholder:text-gray-300"
             />
