@@ -21,6 +21,8 @@ export function useLogin() {
     onMutate: () => setFormError(null),
     onSuccess: (data) => {
       setAccessToken(data.access_token); // in-memory; refresh token rides in HttpOnly cookie
+      // Avoid cross-user carryover of chat context from previous sessions.
+      sessionStorage.removeItem('latest_document_id');
       navigate('/dashboard', { replace: true });
     },
     onError: (err: unknown) => {

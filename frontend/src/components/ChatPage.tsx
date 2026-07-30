@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { chatWithDocument } from '@/api/ai';
+import { toApiError } from '@/api/errors';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useCurrentUser } from '@/features/auth/hooks';
 import PublicHeader from './PublicHeader';
 
 type ChatMessage = {
@@ -11,7 +14,10 @@ type ChatMessage = {
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { data: currentUser } = useCurrentUser();
   const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -19,7 +25,9 @@ const ChatPage: React.FC = () => {
     },
   ]);
 
-  const canSend = input.trim().length > 0;
+  const latestDocumentId = Number(sessionStorage.getItem('latest_document_id') || '');
+  const hasDocumentContext = Number.isInteger(latestDocumentId) && latestDocumentId > 0;
+  const canSend = input.trim().length > 0 && !isSending;
 
   const helperPrompt = useMemo(
     () =>
@@ -29,21 +37,70 @@ const ChatPage: React.FC = () => {
     [isAuthenticated],
   );
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const question = input.trim();
     if (!question) {
       return;
     }
 
-    const assistantReply =
-      'Thanks. Based on what you shared, focus on the trend over time and discuss any high or low values with your provider. If you share the exact value and reference range, I can explain it in more detail.';
-
-    setMessages((current) => [
-      ...current,
-      { role: 'user', text: question },
-      { role: 'assistant', text: assistantReply },
-    ]);
+    setChatError(null);
+    setMessages((current) => [...current, { role: 'user', text: question }]);
     setInput('');
+
+    if (!currentUser?.id) {
+      setMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          text: 'Your session is missing user context. Please sign out and sign in again.',
+        },
+      ]);
+      return;
+    }
+
+    if (!hasDocumentContext) {
+      setMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          text: 'Please upload a medical document first so I can answer questions about your results.',
+        },
+      ]);
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const response = await chatWithDocument({
+        user_id: currentUser.id,
+        document_id: latestDocumentId,
+        message: question,
+      });
+
+      setMessages((current) => [...current, { role: 'assistant', text: response.response }]);
+    } catch (error) {
+      const apiError = toApiError(error);
+      setChatError(apiError.detail);
+
+      const assistantErrorMessage =
+        apiError.status === 404 && apiError.detail.toLowerCase().includes('document')
+          ? 'I could not find the uploaded document for this session. Please upload a document again, then ask your question.'
+          : apiError.status === 401
+            ? 'Your session expired. Please sign in again and try your question.'
+            : apiError.status >= 500
+              ? 'I could not reach the AI service right now. Please try again in a moment.'
+              : apiError.detail || 'Something went wrong. Please try again.';
+
+      setMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          text: assistantErrorMessage,
+        },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -99,9 +156,10 @@ const ChatPage: React.FC = () => {
                   : 'bg-gray-100 text-gray-300'
               }`}
             >
-              Send
+              {isSending ? 'Sending…' : 'Send'}
             </button>
           </div>
+          {chatError && <p className="mt-2 text-sm text-red-600">{chatError}</p>}
         </div>
       </div>
     </div>

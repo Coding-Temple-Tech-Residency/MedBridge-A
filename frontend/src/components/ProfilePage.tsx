@@ -135,6 +135,11 @@ const ProfilePage: React.FC = () => {
     );
   };
 
+  const handleDeleteAppointment = (appointmentId: number) => {
+    setAppointments((current) => current.filter((appointment) => appointment.id !== appointmentId));
+    setAppointmentNotice('Appointment deleted.');
+  };
+
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-[#8FD4A8]/40 bg-white p-6 shadow-sm">
@@ -427,12 +432,23 @@ const ProfilePage: React.FC = () => {
                 key={appointment.id}
                 className="rounded-xl border border-gray-100 bg-[#FDFEFD] px-4 py-3 shadow-sm"
               >
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <p className="text-sm font-semibold text-[#1E3A2F]">{toReadableDate(appointment.date)}</p>
-                  <span className="text-xs text-gray-400">•</span>
-                  <p className="text-sm font-semibold text-[#2E7D55]">{appointment.time}</p>
-                  <span className="text-xs text-gray-400">•</span>
-                  <p className="text-sm text-gray-600">{appointment.doctor}</p>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <p className="text-sm font-semibold text-[#1E3A2F]">{toReadableDate(appointment.date)}</p>
+                    <span className="text-xs text-gray-400">•</span>
+                    <p className="text-sm font-semibold text-[#2E7D55]">{appointment.time}</p>
+                    <span className="text-xs text-gray-400">•</span>
+                    <p className="text-sm text-gray-600">{appointment.doctor}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteAppointment(appointment.id)}
+                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+                    aria-label={`Delete appointment on ${toReadableDate(appointment.date)} at ${appointment.time}`}
+                  >
+                    Delete
+                  </button>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">{appointment.reason}</p>
                 <div className="mt-2 flex items-center gap-2 text-xs">

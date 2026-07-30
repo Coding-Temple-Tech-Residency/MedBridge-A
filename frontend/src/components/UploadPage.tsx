@@ -93,7 +93,7 @@ const UploadPage: React.FC = () => {
     setSuccessMessage(null);
 
     if (tab === 'upload') {
-      setPastedText('');setErrorMessage('Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',);
+      setPastedText('');
     } else {
       setSelectedFile(null);
     }
@@ -157,6 +157,7 @@ const UploadPage: React.FC = () => {
 
       try {
         const uploadedDocument = await uploadDocument(selectedFile);
+        sessionStorage.setItem('latest_document_id', String(uploadedDocument.document_id));
 
         navigate('/results', {
           state: {
@@ -177,6 +178,7 @@ const UploadPage: React.FC = () => {
 
     if (pastedText.trim()) {
       setIsAnalysing(true);
+      sessionStorage.removeItem('latest_document_id');
 
       setTimeout(() => {
         setIsAnalysing(false);

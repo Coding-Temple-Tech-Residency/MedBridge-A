@@ -12,6 +12,7 @@ error only surfaces when an upload is actually attempted.
 """
 
 import os
+from pathlib import Path
 
 
 class StorageUploadError(Exception):
@@ -19,6 +20,15 @@ class StorageUploadError(Exception):
 
 
 _client = None
+
+
+def _upload_file_local(bucket: str, path: str, content: bytes) -> str:
+    """Persist file bytes to local disk for development/testing runs."""
+    root = os.environ.get("LOCAL_STORAGE_ROOT", "/tmp/medbridge_storage")
+    target = Path(root) / bucket / Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(content)
+    return path
 
 
 def _get_client():
@@ -48,6 +58,16 @@ def upload_file(bucket: str, path: str, content: bytes, content_type: str) -> st
 
     Raises StorageUploadError if credentials are missing or the upload fails.
     """
+    backend = os.environ.get("STORAGE_BACKEND", "local").strip().lower()
+
+    if backend == "local":
+        return _upload_file_local(bucket, path, content)
+
+    if backend not in {"supabase", "local"}:
+        raise StorageUploadError(
+            "Unsupported STORAGE_BACKEND. Use 'local' or 'supabase'."
+        )
+
     client = _get_client()
     try:
         client.storage.from_(bucket).upload(
