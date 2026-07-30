@@ -4,6 +4,7 @@ import { uploadDocument } from '../api/documents';
 import { useAuth } from '@/features/auth/AuthContext';
 import { sampleReportText } from '../mockData';
 import PublicHeader from './PublicHeader';
+import { validateUploadFile } from '@/features/auth/validation';
 
 const ALLOWED_FILE_TYPES = ['pdf', 'txt', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
 const MAX_FILE_SIZE_MB = 10;
@@ -99,21 +100,16 @@ const UploadPage: React.FC = () => {
   };
 
   const validateFile = (file: File) => {
-    const extension = file.name.split('.').pop()?.toLowerCase();
+    const validationError = validateUploadFile(file, {
+      allowedExtensions: ALLOWED_FILE_TYPES,
+      maxSizeBytes: MAX_FILE_SIZE_BYTES,
+      maxSizeMb: MAX_FILE_SIZE_MB,
+    });
 
-    if (!extension || !ALLOWED_FILE_TYPES.includes(extension)) {
+    if (validationError) {
       setSelectedFile(null);
       setSuccessMessage(null);
-      setErrorMessage(
-        'Unsupported file type. Please upload a PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG file.',
-      );
-      return;
-    }
-
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      setSelectedFile(null);
-      setSuccessMessage(null);
-      setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB} MB. Please upload a smaller file.`);
+      setErrorMessage(validationError);
       return;
     }
 

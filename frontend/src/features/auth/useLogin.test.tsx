@@ -61,7 +61,7 @@ describe('useLogin', () => {
     act(() => result.current.login({ email: 'pat@example.com', password: 'hunter2!' }));
 
     await waitFor(() =>
-      expect(result.current.formError).toBe('Something went wrong. Please try again.'),
+      expect(result.current.formError).toBe('Server error. Please try again in a moment.'),
     );
     expect(navigateMock).not.toHaveBeenCalled();
   });

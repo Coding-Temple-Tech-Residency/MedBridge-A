@@ -3,107 +3,47 @@ import { useNavigate, Link } from 'react-router-dom';
 import Button from './UI/Button';
 import Input from './UI/Input';
 import Card from './UI/Card';
-
-const REGISTER_ERRORS = {
-  nameRequired: 'Full name is required.',
-  emailRequired: 'Email is required.',
-  emailInvalid: 'Please enter a valid email address.',
-  passwordRequired: 'Password is required.',
-  passwordTooShort: 'Password must be at least 8 characters.',
-  confirmRequired: 'Please confirm your password.',
-  passwordMismatch: 'Passwords do not match.',
-  duplicateEmail: 'An account with this email already exists.',
-  serverError: 'Something went wrong. Please try again.',
-};
+import { useRegister } from '@/features/auth/useRegister';
+import { validateRegisterForm, type RegisterErrors } from '@/features/auth/validation';
 
 const REGISTER_SUCCESS = 'Account created successfully! Redirecting to sign in...';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const { register, isPending, formError } = useRegister();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [nameError, setNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [confirmError, setConfirmError] = useState('');
+  const [errors, setErrors] = useState<RegisterErrors>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setSuccess('');
-    setNameError('');
-    setEmailError('');
-    setPasswordError('');
-    setConfirmError('');
+    const nextErrors = validateRegisterForm({
+      name,
+      email,
+      password,
+      confirm,
+    });
 
-    let hasErrors = false;
-
-    if (!name.trim()) {
-      setNameError(REGISTER_ERRORS.nameRequired);
-      hasErrors = true;
-    }
-
-    if (!email.trim()) {
-      setEmailError(REGISTER_ERRORS.emailRequired);
-      hasErrors = true;
-    }
-
-    if (!password.trim()) {
-      setPasswordError(REGISTER_ERRORS.passwordRequired);
-      hasErrors = true;
-    }
-
-    if (!confirm.trim()) {
-      setConfirmError(REGISTER_ERRORS.confirmRequired);
-      hasErrors = true;
-    }
-
-    if (hasErrors) return;
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setEmailError(REGISTER_ERRORS.emailInvalid);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
-    if (password.length < 8) {
-      setPasswordError(REGISTER_ERRORS.passwordTooShort);
-      return;
-    }
-
-    if (password !== confirm) {
-      setConfirmError(REGISTER_ERRORS.passwordMismatch);
-      return;
-    }
-
-    setLoading(true);
-    // TODO: Replace mock registration with POST /api/auth/register
-    // after the backend authentication endpoint is implemented.
-
-    setTimeout(() => {
-      if (email.toLowerCase() === 'taken@example.com') {
-        setLoading(false);
-        setEmailError(REGISTER_ERRORS.duplicateEmail);
-        return;
-      }
-
-      if (email.toLowerCase() === 'server@example.com') {
-        setLoading(false);
-        setError(REGISTER_ERRORS.serverError);
-        return;
-      }
-
-      setSuccess(REGISTER_SUCCESS);
-
-      setTimeout(() => {
-        navigate('/login');
-      }, 1500);
-    }, 800);
+    register(
+      { name: name.trim(), email: email.trim(), password },
+      {
+        onSuccess: () => {
+          setSuccess(REGISTER_SUCCESS);
+          window.setTimeout(() => {
+            navigate('/login', { replace: true });
+          }, 1500);
+        },
+      },
+    );
   };
 
   return (
@@ -137,10 +77,12 @@ const RegisterPage: React.FC = () => {
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                setNameError('');
+                if (errors.name) {
+                  setErrors((current) => ({ ...current, name: undefined }));
+                }
               }}
               placeholder="Jane Smith"
-              error={nameError}
+              error={errors.name}
               className="mb-5"
             />
 
@@ -152,10 +94,12 @@ const RegisterPage: React.FC = () => {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
-                setEmailError('');
+                if (errors.email) {
+                  setErrors((current) => ({ ...current, email: undefined }));
+                }
               }}
               placeholder="you@example.com"
-              error={emailError}
+              error={errors.email}
               className="mb-5"
             />
 
@@ -167,10 +111,12 @@ const RegisterPage: React.FC = () => {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
-                setPasswordError('');
+                if (errors.password) {
+                  setErrors((current) => ({ ...current, password: undefined }));
+                }
               }}
               placeholder="At least 8 characters"
-              error={passwordError}
+              error={errors.password}
               className="mb-5"
             />
             <Input
@@ -181,10 +127,12 @@ const RegisterPage: React.FC = () => {
               value={confirm}
               onChange={(e) => {
                 setConfirm(e.target.value);
-                setConfirmError('');
+                if (errors.confirm) {
+                  setErrors((current) => ({ ...current, confirm: undefined }));
+                }
               }}
               placeholder="••••••••"
-              error={confirmError}
+              error={errors.confirm}
               className="mb-6"
             />
 
@@ -194,18 +142,18 @@ const RegisterPage: React.FC = () => {
               </div>
             )}
 
-            {error && (
+            {formError && (
               <div className="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
-                {error}
+                {formError}
               </div>
             )}
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={isPending}
               className="w-full py-3.5 shadow-md hover:shadow-lg"
             >
-              {loading ? 'Creating account…' : 'Create Account'}
+              {isPending ? 'Creating account…' : 'Create Account'}
             </Button>
           </form>
 

@@ -10,6 +10,7 @@
 //   the user is redirected to the login screen with a session-expired notice.
 
 import { env } from '@/env';
+import { ApiError } from '@/api/errors';
 import {
   getAccessToken as getToken,
   setAccessToken as setToken,
@@ -85,16 +86,17 @@ async function request<T>(
 
     setToken(null);
     triggerForceLogout();
-    throw { response: { status: 401, data: null } };
+    throw new ApiError(401, 'Your session has expired. Please sign in again.');
   }
 
   if (!res.ok) {
-    throw {
-      response: {
-        status: res.status,
-        data: await res.json().catch(() => null),
-      },
-    };
+    const data = await res.json().catch(() => null);
+    const detail =
+      (data && typeof data === 'object' && 'detail' in data && typeof data.detail === 'string'
+        ? data.detail
+        : undefined) ?? 'Something went wrong. Please try again.';
+
+    throw new ApiError(res.status, detail, data);
   }
 
   const json = res.status === 204 ? null : await res.json();
