@@ -75,6 +75,9 @@ class Document(Base):
     status = Column(String, nullable=False, default="uploaded")
 
     title = Column(String, nullable=True)
+    filename = Column(String, nullable=False, default="")
+    file_type = Column(String, nullable=False, default="")
+    storage_path = Column(String, nullable=False, default="")
     original_text = Column(Text, nullable=True)   # the pasted / extracted text
     ai_summary = Column(Text, nullable=True)       # plain-language AI summary
 

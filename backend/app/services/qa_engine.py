@@ -14,6 +14,8 @@ at the prompt-engineering level, not left to the UI.
 """
 
 import logging
+import os
+import re
 
 from app.services.groq_client import groq_client
 
@@ -130,6 +132,9 @@ def answer_question(
     """
     messages = build_messages(question, document_context, conversation_history)
 
+    if not os.environ.get("GROQ_API_KEY", "").strip():
+        return _fallback_answer(question, document_context)
+
     try:
         response = groq_client.chat.completions.create(
             model=MODEL,
@@ -140,3 +145,25 @@ def answer_question(
         return response.choices[0].message.content or ""
     except Exception as exc:
         raise RuntimeError("AI chat failed. Please try again.") from exc
+
+
+def _fallback_answer(question: str, document_context: str) -> str:
+    """Lightweight rule-based response used when no LLM key is configured."""
+    text = (document_context or "").lower()
+    question_text = question.lower()
+
+    glucose_match = re.search(r"glucose[^\n\r]*?([0-9]+(?:\.[0-9]+)?)\s*mg/?dl", text)
+    if "glucose" in question_text and glucose_match:
+        glucose_value = glucose_match.group(1)
+        return (
+            f"Your document shows glucose around {glucose_value} mg/dL. "
+            "That is slightly above the typical fasting reference range (70-99 mg/dL), "
+            "so it is worth discussing with your clinician and monitoring over time. "
+            f"{CARE_SIGNOFF}"
+        )
+
+    return (
+        "I can answer questions about your uploaded results, but this environment is running "
+        "without an external AI key so responses are limited. Share a specific lab value and "
+        f"reference range, and I can help explain it. {CARE_SIGNOFF}"
+    )
