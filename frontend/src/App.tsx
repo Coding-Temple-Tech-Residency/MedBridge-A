@@ -25,9 +25,6 @@ function App() {
           {/* Public routes */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/upload" element={<UploadPage />} />
-            <Route path="/results" element={<ResultsPage />} />
-            <Route path="/chat" element={<ChatPage />} />
           </Route>
 
           {/* Auth pages — redirect to / when already authenticated */}
@@ -42,6 +39,10 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
+
+            <Route path="/upload" element={<UploadPage />} />
+            <Route path="/results" element={<ResultsPage />} />
+            <Route path="/chat" element={<ChatPage />} />
           </Route>
 
           {/* 404 */}

@@ -10,6 +10,7 @@
 //   the user is redirected to the login screen with a session-expired notice.
 
 import { env } from '@/env';
+import { ApiError } from '@/api/errors';
 import {
   getAccessToken as getToken,
   setAccessToken as setToken,
@@ -18,6 +19,7 @@ import {
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   data?: unknown;
+  formData?: FormData;
   _retry?: boolean;
 };
 
@@ -50,18 +52,23 @@ async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<{ data: T }> {
-  const { data, headers, _retry, ...rest } = options;
+  const { data, formData, headers, _retry, ...rest } = options;
   const token = getToken();
+  const isFormDataRequest = formData !== undefined;
 
   const res = await fetch(`${env.apiBaseUrl}${path}`, {
     method,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+      ...(!isFormDataRequest ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
-    body: data !== undefined ? JSON.stringify(data) : undefined,
+    body: isFormDataRequest
+      ? formData
+      : data !== undefined
+        ? JSON.stringify(data)
+        : undefined,
     ...rest,
   });
 
@@ -79,16 +86,17 @@ async function request<T>(
 
     setToken(null);
     triggerForceLogout();
-    throw { response: { status: 401, data: null } };
+    throw new ApiError(401, 'Your session has expired. Please sign in again.');
   }
 
   if (!res.ok) {
-    throw {
-      response: {
-        status: res.status,
-        data: await res.json().catch(() => null),
-      },
-    };
+    const data = await res.json().catch(() => null);
+    const detail =
+      (data && typeof data === 'object' && 'detail' in data && typeof data.detail === 'string'
+        ? data.detail
+        : undefined) ?? 'Something went wrong. Please try again.';
+
+    throw new ApiError(res.status, detail, data);
   }
 
   const json = res.status === 204 ? null : await res.json();
@@ -98,7 +106,15 @@ async function request<T>(
 export const apiClient = {
   post: <T>(path: string, data?: unknown, options?: Omit<RequestOptions, 'data'>) =>
     request<T>('POST', path, { ...options, data }),
-  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
+
+  upload: <T>(
+    path: string,
+    formData: FormData,
+    options?: Omit<RequestOptions, 'data' | 'formData'>,
+  ) => request<T>('POST', path, { ...options, formData }),
+
+  get: <T>(path: string, options?: RequestOptions) =>
+    request<T>('GET', path, options),
 };
 
 // Compatibility exports for existing code paths.
