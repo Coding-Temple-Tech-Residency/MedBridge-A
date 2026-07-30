@@ -90,8 +90,7 @@ docker-compose up --build
 
 Key deployment detail:
 - The frontend reads `VITE_API_BASE_URL` at build time (not runtime).
-- `docker-compose.yml` passes this as a Docker build arg so built assets point
-  to `http://backend:8000` inside the compose network.
+- Since this URL is used by the browser, it must be reachable from the user’s machine (typically `http://localhost:8000` when running compose locally; override as needed for production).
 
 ### FE-16 manual QA checklist
 
