@@ -78,6 +78,39 @@ before merge.
 
 ---
 
+### Frontend deployment (Docker)
+
+Use the root compose file to run a production-style frontend build and serve it
+on port 3000.
+
+```bash
+# Build and run frontend + backend containers
+docker-compose up --build
+```
+
+Key deployment detail:
+- The frontend reads `VITE_API_BASE_URL` at build time (not runtime).
+- `docker-compose.yml` passes this as a Docker build arg so built assets point
+  to `http://backend:8000` inside the compose network.
+
+### FE-16 manual QA checklist
+
+Run this before merge to confirm production readiness:
+- `cd frontend && npm run lint`
+- `cd frontend && npm run build`
+- Start compose: `docker-compose up --build`
+- Open `http://localhost:3000`
+- Verify login flow works with backend auth endpoints
+- Upload a test report and confirm upload success/error handling UX
+- Open the AI chat flow and verify request/response handling (or clear fallback
+  messaging if backend AI key/service is unavailable)
+
+If backend dependencies (for example Supabase wiring) are still in progress,
+frontend behavior should still be validated for loading, routing, errors, and
+graceful failure states.
+
+---
+
 ---
 
 ## Backend Setup
